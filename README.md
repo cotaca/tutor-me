@@ -1,2 +1,43 @@
 # tutor-me
-Manage lecture slides across modules and create flashcards
+
+Vorlesungsfolien über Studiengang → Semester → Modul verwalten, Karteikarten mit Verweis auf einzelne Folien anlegen und lernen und pro Semester eine Übersichts-Excel exportieren.
+
+Läuft komplett im Browser. Es gibt kein Backend, alle Daten liegen in der IndexedDB des Browsers.
+
+## Funktionen
+
+- Ordnerstruktur Studiengang / Semester / Modul
+- PDF-Upload mit Viewer, Folien ausblenden, Volltextsuche
+- Karteikarten (Frage/Antwort) mit Link zur Folie, Lernmodus (Leitner-System)
+- Export einer Übersichts-Excel: ein Blatt pro Modul, Folientitel thematisch gruppiert
+
+Details zu Konzept und Datenmodell stehen in [docs/CONCEPT.md](docs/CONCEPT.md).
+
+## Stack
+
+| Bereich  | Paket                     |
+| -------- | ------------------------- |
+| Build    | Vite + React + TypeScript |
+| UI       | Mantine                   |
+| PDF      | pdfjs-dist                |
+| Excel    | exceljs                   |
+| Speicher | idb-keyval (IndexedDB)    |
+
+## Voraussetzungen
+
+- Node.js ≥ 20.19 (getestet mit 22)
+
+## Entwicklung
+
+```powershell
+npm install
+npm run dev      # Dev-Server auf http://localhost:5173
+npm run build    # Produktions-Build nach dist/
+npm run preview  # Build lokal ansehen
+npm run lint
+```
+
+## Hinweise
+
+- Die Daten hängen an Browser und Gerät. Wer den Browser-Speicher löscht, verliert alles, also regelmäßig den JSON-Export als Backup nutzen.
+- PDFs und Excel-Dateien sind per `.gitignore` ausgeschlossen, damit keine Vorlesungsfolien ins Repo gelangen.
