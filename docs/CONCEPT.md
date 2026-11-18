@@ -30,11 +30,11 @@ Grundsatz: so simpel wie möglich. Prototyp für einen Nutzer.
 ## Datenmodell
 
 ```ts
-type Semester = { id; studiengang; name }
+type Semester = { id; program; name }
 type Module = { id; semesterId; short; name; lecturer }
 type Slides = { id; moduleId; lectureNum: string; pdf: Blob }
-type Slide = { slidesId; page; titel; hidden: boolean; note?: string }
-type Topic = { slidesId; onPage; titel; level: 1 | 2 | 3 }
+type Slide = { slidesId; page; title; hidden: boolean; note?: string }
+type Topic = { slidesId; onPage; title; level: 1 | 2 | 3 }
 type Card = { id; moduleId; question; answer; link?: { slidesId; page } }
 ```
 

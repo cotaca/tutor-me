@@ -1,6 +1,6 @@
 import { get, set, del } from 'idb-keyval'
 
-export type Semester = { id: string; studiengang: string; name: string }
+export type Semester = { id: string; program: string; name: string }
 export type Module = {
   id: string
   semesterId: string
@@ -12,11 +12,11 @@ export type Slides = { id: string; moduleId: string; lectureNum: string }
 export type Slide = {
   slidesId: string
   page: number
-  titel: string
+  title: string
   hidden: boolean
   note?: string
 }
-export type Topic = { slidesId: string; onPage: number; titel: string; level: 1 | 2 | 3 }
+export type Topic = { slidesId: string; onPage: number; title: string; level: 1 | 2 | 3 }
 export type Card = {
   id: string
   moduleId: string
