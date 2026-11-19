@@ -8,7 +8,7 @@ export type Selection =
   | { kind: 'module'; id: string }
   | { kind: 'slides'; id: string }
 
-export function patchById<K extends 'semesters' | 'modules' | 'slides'>(
+export function patchById<K extends 'semesters' | 'modules' | 'slides' | 'topics'>(
   data: Data,
   key: K,
   id: string,
@@ -90,7 +90,7 @@ export function removeTarget(data: Data, target: Selection) {
     modules: data.modules.filter((m) => !moduleIds.includes(m.id)),
     slides: data.slides.filter((s) => !pdfIds.includes(s.id)),
     pages: data.pages.filter((p) => !pdfIds.includes(p.slidesId)),
-    topics: data.topics.filter((t) => !pdfIds.includes(t.slidesId)),
+    topics: data.topics.filter((t) => !moduleIds.includes(t.moduleId)),
     cards: data.cards
       .filter((c) => !moduleIds.includes(c.moduleId))
       .map((c) => (c.link && pdfIds.includes(c.link.slidesId) ? { ...c, link: undefined } : c)),

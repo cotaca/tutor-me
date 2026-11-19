@@ -12,6 +12,7 @@ import {
 import { deletePdf, loadData, saveData, type Data, type Slide } from './lib/db'
 import { ModuleView } from './views/ModuleView'
 import { hitNavigation, search } from './lib/search'
+import { addTopic, assignTopic, moveTopic, removeTopic } from './lib/topics'
 import { SearchBar, SearchResults } from './components/SearchBar'
 import { Sidebar } from './components/Sidebar'
 import { SlidesView } from './views/SlidesView'
@@ -204,6 +205,16 @@ export default function App() {
                   }),
                 )
               }
+              topics={data.topics.filter((t) => t.moduleId === slides.moduleId)}
+              onAssign={(pages, topicId) => update(assignTopic(data, slides.id, pages, topicId))}
+              onAddTopic={(parentId, assignTo) => {
+                const id = crypto.randomUUID()
+                const next = addTopic(data, id, slides.moduleId, parentId)
+                update(assignTo.length ? assignTopic(next, slides.id, assignTo, id) : next)
+              }}
+              onPatchTopic={(id, change) => update(patchById(data, 'topics', id, change))}
+              onRemoveTopic={(id) => update(removeTopic(data, id))}
+              onMoveTopic={(id, step) => update(moveTopic(data, id, step))}
             />
           )}
         </Stack>

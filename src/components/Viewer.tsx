@@ -1,32 +1,39 @@
 import { useEffect, useRef, useState } from 'react'
-import { ActionIcon, Group, ScrollArea, Text } from '@mantine/core'
+import { ActionIcon, Group, ScrollArea, Stack, Text } from '@mantine/core'
 import {
   IconChevronLeft,
   IconChevronRight,
-  IconEye,
-  IconEyeOff,
   IconLayoutSidebarRightCollapse,
   IconLayoutSidebarRightExpand,
 } from '@tabler/icons-react'
-import * as pdfjs from 'pdfjs-dist'
 import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist'
-import { loadPdf, type Slide } from '../lib/db'
+import type { Slide } from '../lib/db'
+import { Thumb } from './Thumb'
 
 const THUMBS_WIDTH = 150
 
 type Props = {
-  slidesId: string
+  doc?: PDFDocumentProxy
+  thumbs: string[]
   pages: Slide[]
   page: number
   hits: Set<number>
+  stripes: (page: Slide) => string[]
   onPage: (page: number) => void
   onToggleHidden: (page: number) => void
 }
 
-export function Viewer({ slidesId, pages, page, hits, onPage: setPage, onToggleHidden }: Props) {
-  const [doc, setDoc] = useState<PDFDocumentProxy>()
+export function Viewer({
+  doc,
+  thumbs,
+  pages,
+  page,
+  hits,
+  stripes,
+  onPage: setPage,
+  onToggleHidden,
+}: Props) {
   const [size, setSize] = useState({ width: 0, height: 0 })
-  const [thumbs, setThumbs] = useState<string[]>([])
   const [thumbsOpen, setThumbsOpen] = useState(true)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const boxRef = useRef<HTMLDivElement>(null)
@@ -54,42 +61,6 @@ export function Viewer({ slidesId, pages, page, hits, onPage: setPage, onToggleH
     observer.observe(boxRef.current!)
     return () => observer.disconnect()
   }, [])
-
-  useEffect(() => {
-    let cancelled = false
-    let task: ReturnType<typeof pdfjs.getDocument> | undefined
-    loadPdf(slidesId).then(async (blob) => {
-      const data = blob && (await blob.arrayBuffer())
-      if (!data || cancelled) return
-      task = pdfjs.getDocument({ data })
-      task.promise.then(setDoc, () => {})
-    })
-    return () => {
-      cancelled = true
-      task?.destroy()
-    }
-  }, [slidesId])
-
-  // ponytail: rendert alle Vorschaubilder beim Öffnen; bei sehr langen PDFs auf Lazy-Rendering umstellen.
-  useEffect(() => {
-    if (!doc) return
-    let cancelled = false
-    ;(async () => {
-      for (let i = 1; i <= doc.numPages && !cancelled; i++) {
-        const p = await doc.getPage(i)
-        const viewport = p.getViewport({ scale: 240 / p.getViewport({ scale: 1 }).width })
-        const canvas = document.createElement('canvas')
-        canvas.width = viewport.width
-        canvas.height = viewport.height
-        await p.render({ canvas, viewport }).promise
-        const url = canvas.toDataURL('image/jpeg', 0.7)
-        if (!cancelled) setThumbs((t) => [...t, url])
-      }
-    })().catch(() => {})
-    return () => {
-      cancelled = true
-    }
-  }, [doc])
 
   useEffect(() => {
     if (!doc || !size.width || !size.height) return
@@ -143,46 +114,19 @@ export function Viewer({ slidesId, pages, page, hits, onPage: setPage, onToggleH
           }}
         >
           <ScrollArea w={THUMBS_WIDTH} ml={12} type="auto" offsetScrollbars>
-            {pages.map((p, i) => (
-              <div
-                key={p.page}
-                className="hover-parent"
-                onClick={() => setPage(p.page)}
-                style={{
-                  position: 'relative',
-                  cursor: 'pointer',
-                  marginBottom: 8,
-                  border: `2px solid var(--mantine-color-${p.page === page ? 'blue-6' : hits.has(p.page) ? 'yellow-5' : 'gray-3'})`,
-                }}
-              >
-                {thumbs[i] ? (
-                  <img
-                    src={thumbs[i]}
-                    style={{ display: 'block', width: '100%', opacity: p.hidden ? 0.4 : 1 }}
-                  />
-                ) : (
-                  <div
-                    style={{ aspectRatio: '16 / 9', background: 'var(--mantine-color-gray-1)' }}
-                  />
-                )}
-                <ActionIcon
-                  className={p.hidden ? undefined : 'hover-only'}
-                  pos="absolute"
-                  top={4}
-                  right={4}
-                  size="sm"
-                  variant="white"
-                  color="dark"
-                  style={{ boxShadow: 'var(--mantine-shadow-md)' }}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onToggleHidden(p.page)
-                  }}
-                >
-                  {p.hidden ? <IconEyeOff size={14} /> : <IconEye size={14} />}
-                </ActionIcon>
-              </div>
-            ))}
+            <Stack gap={8}>
+              {pages.map((p, i) => (
+                <Thumb
+                  key={p.page}
+                  url={thumbs[i]}
+                  hidden={p.hidden}
+                  border={p.page === page ? 'blue-6' : hits.has(p.page) ? 'yellow-5' : 'gray-3'}
+                  stripes={stripes(p)}
+                  onClick={() => setPage(p.page)}
+                  onToggleHidden={() => onToggleHidden(p.page)}
+                />
+              ))}
+            </Stack>
           </ScrollArea>
         </div>
       </Group>

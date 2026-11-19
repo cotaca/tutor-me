@@ -16,8 +16,17 @@ export type Slide = {
   text: string
   hidden: boolean
   note?: string
+  topicId?: string
 }
-export type Topic = { slidesId: string; onPage: number; title: string; level: 1 | 2 | 3 }
+// Themen gehören zum Modul und können sich so über mehrere Foliensätze ziehen.
+// Unterthemen hängen per parentId am Oberthema, beliebig tief. color ist ein Mantine-Farbname.
+export type Topic = {
+  id: string
+  moduleId: string
+  parentId?: string
+  title: string
+  color?: string
+}
 export type Card = {
   id: string
   moduleId: string

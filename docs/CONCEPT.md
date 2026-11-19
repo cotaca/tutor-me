@@ -33,8 +33,8 @@ Grundsatz: so simpel wie möglich. Prototyp für einen Nutzer.
 type Semester = { id; program; name }
 type Module = { id; semesterId; short; name; lecturer }
 type Slides = { id; moduleId; lectureNum: string; pdf: Blob }
-type Slide = { slidesId; page; title; text; hidden: boolean; note?: string }
-type Topic = { slidesId; onPage; title; level: 1 | 2 | 3 }
+type Slide = { slidesId; page; title; text; hidden: boolean; note?: string; topicId? }
+type Topic = { id; moduleId; parentId?; title; color? }
 type Card = { id; moduleId; question; answer; link?: { slidesId; page } }
 ```
 
@@ -50,8 +50,10 @@ Automatisch: größte Textzeile im oberen Seitenbereich. Immer manuell editierba
 
 ### Thematische Gruppierung
 
-Manuell: im Viewer auf einer Folie "ab hier Thema X" (Ebene 1–3) setzen.
-Vorschlag aus PDF-Lesezeichen (`getOutline()`), falls vorhanden.
+Themen pro Modul, beliebig verschachtelt (Unterthema per `parentId`), können sich über mehrere Foliensätze ziehen.
+Jede Folie hat höchstens ein (tiefstes) Thema, die Oberthemen ergeben sich aus der Kette.
+Im Foliensatz-Modus "Gliedern": Folien im Raster auswählen (Klick, Shift+Klick) und ein Thema zuweisen.
+Farben automatisch aus einer Pastellpalette pro Oberthema, Unterthemen in kräftigeren Tönen derselben Farbe, änderbar.
 
 ### Übersichts-Excel
 
