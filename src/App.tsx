@@ -203,6 +203,7 @@ export default function App() {
               pages={slidesPages}
               page={page}
               hits={new Set(hits.filter((h) => h.slidesId === slides.id).map((h) => h.page))}
+              query={query}
               search={searchBar}
               onPage={setPage}
               onPatch={(change) => update(patchById(data, 'slides', slides.id, change))}

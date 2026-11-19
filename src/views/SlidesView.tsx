@@ -14,6 +14,7 @@ type Props = {
   pages: Slide[]
   page: number
   hits: Set<number>
+  query: string
   topics: Topic[]
   search: ReactNode
   onPage: (page: number) => void
@@ -86,6 +87,7 @@ export function SlidesView(props: Props) {
         pages={pages}
         page={page}
         hits={props.hits}
+        query={props.query}
         stripes={stripesOf}
         onPage={props.onPage}
         onPatchPages={props.onPatchPages}
