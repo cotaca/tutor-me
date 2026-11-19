@@ -10,7 +10,7 @@ import {
 } from '@tabler/icons-react'
 import * as pdfjs from 'pdfjs-dist'
 import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist'
-import { loadPdf, type Slide } from './db'
+import { loadPdf, type Slide } from '../lib/db'
 
 const THUMBS_WIDTH = 150
 

@@ -1,5 +1,5 @@
 import assert from 'node:assert'
-import { guessTitle } from '../src/pdfText.ts'
+import { guessTitle } from '../src/lib/pdfText.ts'
 
 const piece = (str: string, size: number, y: number) => ({
   str,
