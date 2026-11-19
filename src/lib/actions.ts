@@ -1,5 +1,6 @@
 import * as pdfjs from 'pdfjs-dist'
 import { savePdf, type Data, type Slide } from './db'
+import type { Edit } from './sheet'
 import { readPages } from './pdfText'
 
 export type Selection =
@@ -18,16 +19,16 @@ export function patchById<K extends 'semesters' | 'modules' | 'slides' | 'topics
   return { ...data, [key]: list.map((x) => (x.id === id ? { ...x, ...change } : x)) }
 }
 
-export function patchPage(
+export function patchPages(
   data: Data,
   slidesId: string,
-  page: number,
+  pages: number[],
   change: Partial<Slide>,
 ): Data {
   return {
     ...data,
     pages: data.pages.map((p) =>
-      p.slidesId === slidesId && p.page === page ? { ...p, ...change } : p,
+      p.slidesId === slidesId && pages.includes(p.page) ? { ...p, ...change } : p,
     ),
   }
 }
@@ -96,4 +97,19 @@ export function removeTarget(data: Data, target: Selection) {
       .map((c) => (c.link && pdfIds.includes(c.link.slidesId) ? { ...c, link: undefined } : c)),
   }
   return { data: next, pdfIds }
+}
+
+// Schreibt eine Textänderung aus der Excel-Vorschau zurück in die App-Daten.
+export function applyEdit(data: Data, edit: Edit, value: string): Data {
+  switch (edit.kind) {
+    case 'module':
+      return patchById(data, 'modules', edit.id, { [edit.field]: value })
+    case 'slides':
+      return patchById(data, 'slides', edit.id, { lectureNum: value })
+    case 'topic':
+      return patchById(data, 'topics', edit.id, { title: value })
+    case 'title':
+    case 'note':
+      return patchPages(data, edit.slidesId, [edit.page], { [edit.kind]: value })
+  }
 }

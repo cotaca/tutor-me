@@ -20,7 +20,7 @@ type Props = {
   hits: Set<number>
   stripes: (page: Slide) => string[]
   onPage: (page: number) => void
-  onToggleHidden: (page: number) => void
+  onPatchPages: (pages: number[], change: Partial<Slide>) => void
 }
 
 export function Viewer({
@@ -31,7 +31,7 @@ export function Viewer({
   hits,
   stripes,
   onPage: setPage,
-  onToggleHidden,
+  onPatchPages,
 }: Props) {
   const [size, setSize] = useState({ width: 0, height: 0 })
   const [thumbsOpen, setThumbsOpen] = useState(true)
@@ -120,10 +120,12 @@ export function Viewer({
                   key={p.page}
                   url={thumbs[i]}
                   hidden={p.hidden}
+                  task={!!p.task}
                   border={p.page === page ? 'blue-6' : hits.has(p.page) ? 'yellow-5' : 'gray-3'}
                   stripes={stripes(p)}
                   onClick={() => setPage(p.page)}
-                  onToggleHidden={() => onToggleHidden(p.page)}
+                  onToggleHidden={() => onPatchPages([p.page], { hidden: !p.hidden })}
+                  onToggleTask={() => onPatchPages([p.page], { task: !p.task })}
                 />
               ))}
             </Stack>

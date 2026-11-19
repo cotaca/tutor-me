@@ -33,7 +33,7 @@ Grundsatz: so simpel wie möglich. Prototyp für einen Nutzer.
 type Semester = { id; program; name }
 type Module = { id; semesterId; short; name; lecturer }
 type Slides = { id; moduleId; lectureNum: string; pdf: Blob }
-type Slide = { slidesId; page; title; text; hidden: boolean; note?: string; topicId? }
+type Slide = { slidesId; page; title; text; hidden: boolean; note?: string; topicId?; task? }
 type Topic = { id; moduleId; parentId?; title; color? }
 type Card = { id; moduleId; question; answer; link?: { slidesId; page } }
 ```
@@ -57,9 +57,23 @@ Farben automatisch aus einer Pastellpalette pro Oberthema, Unterthemen in kräft
 
 ### Übersichts-Excel
 
-Eine Datei pro Semester, ein Arbeitsblatt pro Modul (Aufbau wie Beispieldatei):
+Auf der Semesterseite: Vorschau mit einem Reiter pro Modul und Button "Excel exportieren".
+Eine Datei pro Semester (`<Semester> – Vorlesungsinhalte.xlsx`), ein Arbeitsblatt pro Modul.
+Vorschau und Export entstehen aus demselben Tabellenmodell, damit die Datei genau der Vorschau entspricht.
 
-- Kopf: A1:A2 Kürzel, B1:E1 Modulname, B2:E2 Dozent
-- Zeile 3: `#` | `Thema` (Ebenen in B–C/D) | `Inhalt` | `Sonstiges`
-- `#` = VL-Nummer, Thema-Zellen über ihren Folienbereich verbunden
-- `Inhalt` = Folientitel (ausgeblendete Folien weglassen), `Sonstiges` = `Folie.notiz`
+- Kopf: A1:A2 Kürzel, B1 Modulname, B2 Dozent*in (über alle Spalten verbunden)
+- Zeile 3: `#` | `Thema` (eine Spalte pro genutzter Ebene) | `Folie` | `Inhalt` | `Sonstiges`
+- Eine Zeile pro Folie. `#` = Vorlesung, über ihre Folien verbunden; Themenzellen über aufeinanderfolgende Folien
+  mit demselben Thema verbunden (auch über Vorlesungsgrenzen)
+- `Folie` = Seitenzahl, `Inhalt` = Folientitel, `Sonstiges` = "Aufgabe" (falls markiert) + Notiz
+- Ausgeblendete Folien bleiben drin, aber grau und kursiv. Keine Themenfarben in der Excel.
+
+Bearbeiten in der Vorschau nur als Notlösung, das Ziel ist eine Excel, die beim Export schon stimmt.
+Nur Text, per Doppelklick; jede Änderung geht in die App-Daten zurück (Modulkopf, Vorlesung, Thema,
+Folientitel, Notiz). Struktur (Themenzuordnung, Reihenfolge) nur im Gliedern-Modus.
+
+### Aufgaben
+
+`Slide.task`: beim Upload automatisch gesetzt, wenn Titel oder erste Textzeile mit Aufgabe, Übung,
+Exercise, Task oder Quiz beginnt bzw. das Wort enthält. Manuell umschaltbar am Vorschaubild und für
+mehrere Folien im Gliedern-Modus.

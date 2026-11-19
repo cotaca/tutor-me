@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
-import { Group, SegmentedControl, Text } from '@mantine/core'
+import { ActionIcon, Group, SegmentedControl, Text, Tooltip } from '@mantine/core'
+import { IconPencil } from '@tabler/icons-react'
 import { Field } from '../components/Field'
 import { HEADER_HEIGHT } from '../components/layout'
 import { Outline } from '../components/Outline'
@@ -17,8 +18,7 @@ type Props = {
   search: ReactNode
   onPage: (page: number) => void
   onPatch: (change: Partial<Slides>) => void
-  onPatchPage: (page: number, change: Partial<Slide>) => void
-  onToggleHidden: (page: number) => void
+  onPatchPages: (pages: number[], change: Partial<Slide>) => void
   onAssign: (pages: number[], topicId?: string) => void
   onAddTopic: (parentId: string | undefined, assignTo: number[]) => void
   onPatchTopic: (id: string, change: Partial<Topic>) => void
@@ -61,8 +61,18 @@ export function SlidesView(props: Props) {
           w={400}
           label="Folientitel"
           value={current?.title ?? ''}
-          onSave={(v) => props.onPatchPage(page, { title: v })}
+          onSave={(v) => props.onPatchPages([page], { title: v })}
         />
+        <Tooltip label={current?.task ? 'Aufgabe-Markierung entfernen' : 'Als Aufgabe markieren'}>
+          <ActionIcon
+            size="input-sm"
+            variant={current?.task ? 'filled' : 'default'}
+            color={current?.task ? 'orange' : undefined}
+            onClick={() => props.onPatchPages([page], { task: !current?.task })}
+          >
+            <IconPencil size={18} />
+          </ActionIcon>
+        </Tooltip>
         {props.search}
         <div style={{ marginLeft: 'auto' }}>{modeSwitch}</div>
       </Group>
@@ -78,7 +88,7 @@ export function SlidesView(props: Props) {
         hits={props.hits}
         stripes={stripesOf}
         onPage={props.onPage}
-        onToggleHidden={props.onToggleHidden}
+        onPatchPages={props.onPatchPages}
       />
     </>
   ) : (
@@ -89,7 +99,7 @@ export function SlidesView(props: Props) {
       topics={topics}
       stripes={stripesOf}
       modeSwitch={modeSwitch}
-      onToggleHidden={props.onToggleHidden}
+      onPatchPages={props.onPatchPages}
       onAssign={props.onAssign}
       onAddTopic={props.onAddTopic}
       onPatchTopic={props.onPatchTopic}

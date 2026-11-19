@@ -4,7 +4,8 @@ import { IconLayoutSidebarLeftExpand } from '@tabler/icons-react'
 import {
   importPdfs,
   patchById,
-  patchPage,
+  applyEdit,
+  patchPages,
   removeTarget,
   renameProgram,
   type Selection,
@@ -17,6 +18,7 @@ import { SearchBar, SearchResults } from './components/SearchBar'
 import { Sidebar } from './components/Sidebar'
 import { SlidesView } from './views/SlidesView'
 import { NameView } from './views/NameView'
+import { SemesterView } from './views/SemesterView'
 
 export default function App() {
   const [data, setData] = useState<Data>()
@@ -158,12 +160,19 @@ export default function App() {
             />
           )}
           {semester && (
-            <NameView
-              key={semester.id}
-              title="Semester"
-              value={semester.name}
-              onSave={(v) => update(patchById(data, 'semesters', semester.id, { name: v }))}
+            <SemesterView
+              data={data}
+              semester={semester}
+              onRename={(v) => update(patchById(data, 'semesters', semester.id, { name: v }))}
               onDelete={() => confirmRemove({ kind: 'semester', id: semester.id })}
+              onEdit={(edit, value) => update(applyEdit(data, edit, value))}
+              onOpen={openSlides}
+              onToggleHidden={(slidesId, p) => {
+                const hidden = data.pages.find(
+                  (x) => x.slidesId === slidesId && x.page === p,
+                )?.hidden
+                update(patchPages(data, slidesId, [p], { hidden: !hidden }))
+              }}
             />
           )}
           {module && (
@@ -197,14 +206,7 @@ export default function App() {
               search={searchBar}
               onPage={setPage}
               onPatch={(change) => update(patchById(data, 'slides', slides.id, change))}
-              onPatchPage={(p, change) => update(patchPage(data, slides.id, p, change))}
-              onToggleHidden={(p) =>
-                update(
-                  patchPage(data, slides.id, p, {
-                    hidden: !slidesPages.find((x) => x.page === p)?.hidden,
-                  }),
-                )
-              }
+              onPatchPages={(ps, change) => update(patchPages(data, slides.id, ps, change))}
               topics={data.topics.filter((t) => t.moduleId === slides.moduleId)}
               onAssign={(pages, topicId) => update(assignTopic(data, slides.id, pages, topicId))}
               onAddTopic={(parentId, assignTo) => {

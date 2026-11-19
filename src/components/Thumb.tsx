@@ -1,17 +1,28 @@
 import type { MouseEvent } from 'react'
 import { ActionIcon } from '@mantine/core'
-import { IconEye, IconEyeOff } from '@tabler/icons-react'
+import { IconEye, IconEyeOff, IconPencil } from '@tabler/icons-react'
 
 type Props = {
   url?: string
   hidden: boolean
+  task: boolean
   border: string // Mantine-Farbe wie 'blue-6'
   stripes: string[] // Themenfarben, eine pro Ebene
   onClick: (e: MouseEvent) => void
   onToggleHidden: () => void
+  onToggleTask: () => void
 }
 
-export function Thumb({ url, hidden, border, stripes, onClick, onToggleHidden }: Props) {
+export function Thumb({
+  url,
+  hidden,
+  task,
+  border,
+  stripes,
+  onClick,
+  onToggleHidden,
+  onToggleTask,
+}: Props) {
   return (
     <div
       className="hover-parent"
@@ -48,6 +59,23 @@ export function Thumb({ url, hidden, border, stripes, onClick, onToggleHidden }:
         }}
       >
         {hidden ? <IconEyeOff size={14} /> : <IconEye size={14} />}
+      </ActionIcon>
+      <ActionIcon
+        className={task ? undefined : 'hover-only'}
+        pos="absolute"
+        bottom={4}
+        right={4}
+        size="sm"
+        variant={task ? 'filled' : 'white'}
+        color={task ? 'orange' : 'dark'}
+        title={task ? 'Aufgabe (klicken zum Entfernen)' : 'Als Aufgabe markieren'}
+        style={{ boxShadow: 'var(--mantine-shadow-md)' }}
+        onClick={(e) => {
+          e.stopPropagation()
+          onToggleTask()
+        }}
+      >
+        <IconPencil size={14} />
       </ActionIcon>
     </div>
   )

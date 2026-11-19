@@ -10,7 +10,7 @@ type Props = {
   thumbs: string[]
   topics: Topic[]
   stripes: (page: Slide) => string[]
-  onToggleHidden: (page: number) => void
+  onPatchPages: (pages: number[], change: Partial<Slide>) => void
   onAssign: (pages: number[], topicId?: string) => void
   onAddTopic: (parentId: string | undefined, assignTo: number[]) => void
   onPatchTopic: (id: string, change: Partial<Topic>) => void
@@ -45,6 +45,8 @@ export function Outline(props: Props) {
     else setSelected([page])
   }
 
+  const allTasks = selected.every((n) => props.pages.find((p) => p.page === n)?.task)
+
   return (
     <>
       {/* Gleicher Aufbau wie im Lesemodus (Kopfzeile + Statuszeile), damit beim Wechsel nichts springt. */}
@@ -53,6 +55,12 @@ export function Outline(props: Props) {
           <>
             <Button variant="default" onClick={() => props.onAssign(selected)}>
               Thema entfernen
+            </Button>
+            <Button
+              variant="default"
+              onClick={() => props.onPatchPages(selected, { task: !allTasks })}
+            >
+              {allTasks ? 'Aufgabe-Markierung entfernen' : 'Als Aufgabe markieren'}
             </Button>
             <Button variant="subtle" color="gray" onClick={() => setSelected([])}>
               Auswahl aufheben
@@ -75,10 +83,12 @@ export function Outline(props: Props) {
                 <Thumb
                   url={props.thumbs[i]}
                   hidden={p.hidden}
+                  task={!!p.task}
                   border={selected.includes(p.page) ? 'blue-6' : 'gray-3'}
                   stripes={props.stripes(p)}
                   onClick={(e) => select(p.page, e)}
-                  onToggleHidden={() => props.onToggleHidden(p.page)}
+                  onToggleHidden={() => props.onPatchPages([p.page], { hidden: !p.hidden })}
+                  onToggleTask={() => props.onPatchPages([p.page], { task: !p.task })}
                 />
                 <Text size="xs" c="dimmed" lineClamp={1}>
                   {p.page}. {p.title}

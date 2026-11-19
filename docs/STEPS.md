@@ -14,7 +14,11 @@
 - [x] **3. PDF-Upload und Viewer**: Dropzone im Modul, Seiten mit pdf.js rendern, blättern, Folien ausblenden
 - [x] **4. Text, Suche und Folientitel**: beim Upload `getTextContent()` pro Seite speichern, Suche, Titelvorschlag
 - [x] **5. Themen**: Modus "Gliedern" im Foliensatz, Themen pro Modul beliebig verschachtelt, Farbstreifen und Themenpfad
-- [ ] **6. Excel-Export**: exceljs, ein Blatt pro Modul, Aufbau wie `Vorlesungsinhalte.xlsx`
+- [x] **6. Übersichts-Excel** auf der Semesterseite
+  - [x] Aufgaben/Übungen markieren: automatisch beim Upload erkennen, manuell im Gliedern-Modus und am Vorschaubild
+  - [x] Tabellenmodell pro Modul (gemeinsame Grundlage für Vorschau und Export)
+  - [x] Vorschau: ein Reiter pro Modul, Textbearbeitung per Doppelklick schreibt in die App-Daten zurück
+  - [x] Export mit exceljs: `<Semester> – Vorlesungsinhalte.xlsx`
 - [ ] **7. Karteikarten**: aus dem Viewer anlegen, mit Link zur aktuellen Folie
 - [ ] **8. Lernmodus**: fällige Karten abfragen, richtig = nächstes Fach, falsch = Fach 1
 - [ ] **9. Backup**: alle Daten als JSON exportieren und importieren

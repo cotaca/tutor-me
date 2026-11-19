@@ -17,6 +17,7 @@ export type Slide = {
   hidden: boolean
   note?: string
   topicId?: string
+  task?: boolean
 }
 // Themen gehören zum Modul und können sich so über mehrere Foliensätze ziehen.
 // Unterthemen hängen per parentId am Oberthema, beliebig tief. color ist ein Mantine-Farbname.

@@ -3,16 +3,15 @@ import type { PDFDocumentProxy } from 'pdfjs-dist'
 type TextPiece = { str: string; transform: number[] }
 
 export async function readPages(doc: PDFDocumentProxy) {
-  const pages: { title: string; text: string }[] = []
+  const pages: { title: string; text: string; task: boolean }[] = []
   for (let i = 1; i <= doc.numPages; i++) {
     const page = await doc.getPage(i)
     const content = await page.getTextContent()
     const items = content.items.flatMap((it) => ('str' in it ? [it] : []))
     const [, bottom, , top] = page.view
-    pages.push({
-      text: items.map((it) => it.str + (it.hasEOL ? '\n' : '')).join(''),
-      title: guessTitle(items, bottom, top),
-    })
+    const text = items.map((it) => it.str + (it.hasEOL ? '\n' : '')).join('')
+    const title = guessTitle(items, bottom, top)
+    pages.push({ text, title, task: isTask(title, text) })
   }
   return pages
 }
@@ -30,4 +29,11 @@ export function guessTitle(items: TextPiece[], bottom: number, top: number) {
     .map((it) => it.str.trim())
     .join(' ')
     .replace(/\s+/g, ' ')
+}
+
+// Nur Titel und erste Textzeile prüfen: Fußzeilen wie "Vorlesung und Übung" stehen sonst auf jeder Folie.
+const TASK_WORD = /(^|[^\p{L}])(aufgabe|übung|exercise|task|quiz)/iu
+export function isTask(title: string, text: string) {
+  const firstLine = text.split('\n').find((l) => l.trim()) ?? ''
+  return TASK_WORD.test(title) || TASK_WORD.test(firstLine)
 }
