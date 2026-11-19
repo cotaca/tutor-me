@@ -13,6 +13,7 @@ export type Slide = {
   slidesId: string
   page: number
   title: string
+  text: string
   hidden: boolean
   note?: string
 }

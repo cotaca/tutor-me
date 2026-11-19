@@ -17,12 +17,14 @@ const THUMBS_WIDTH = 150
 type Props = {
   slidesId: string
   pages: Slide[]
+  page: number
+  hits: Set<number>
+  onPage: (page: number) => void
   onToggleHidden: (page: number) => void
 }
 
-export function Viewer({ slidesId, pages, onToggleHidden }: Props) {
+export function Viewer({ slidesId, pages, page, hits, onPage: setPage, onToggleHidden }: Props) {
   const [doc, setDoc] = useState<PDFDocumentProxy>()
-  const [page, setPage] = useState(() => pages.find((p) => !p.hidden)?.page ?? 1)
   const [size, setSize] = useState({ width: 0, height: 0 })
   const [thumbs, setThumbs] = useState<string[]>([])
   const [thumbsOpen, setThumbsOpen] = useState(true)
@@ -150,7 +152,7 @@ export function Viewer({ slidesId, pages, onToggleHidden }: Props) {
                   position: 'relative',
                   cursor: 'pointer',
                   marginBottom: 8,
-                  border: `2px solid ${p.page === page ? 'var(--mantine-color-blue-6)' : 'var(--mantine-color-gray-3)'}`,
+                  border: `2px solid var(--mantine-color-${p.page === page ? 'blue-6' : hits.has(p.page) ? 'yellow-5' : 'gray-3'})`,
                 }}
               >
                 {thumbs[i] ? (

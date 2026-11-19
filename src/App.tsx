@@ -1,22 +1,29 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   ActionIcon,
   AppShell,
+  Button,
+  Divider,
   Group,
   NavLink,
   ScrollArea,
+  SimpleGrid,
   Stack,
+  Table,
   Text,
   TextInput,
   Title,
+  Tooltip,
 } from '@mantine/core'
-import { Dropzone, PDF_MIME_TYPE } from '@mantine/dropzone'
 import {
   IconLayoutSidebarLeftCollapse,
   IconLayoutSidebarLeftExpand,
   IconTrash,
   IconChevronDown,
   IconChevronRight,
+  IconChevronUp,
+  IconFiles,
+  IconX,
 } from '@tabler/icons-react'
 import * as pdfjs from 'pdfjs-dist'
 import {
@@ -27,8 +34,10 @@ import {
   type Data,
   type Module,
   type Semester,
+  type Slide,
   type Slides,
 } from './db'
+import { readPages } from './pdfText'
 import { Viewer } from './Viewer'
 
 type Selection =
@@ -42,9 +51,25 @@ export default function App() {
   const [sel, setSel] = useState<Selection>()
   const [navOpen, setNavOpen] = useState(true)
   const [collapsed, setCollapsed] = useState(new Set<string>())
+  const [page, setPage] = useState(1)
+  const [query, setQuery] = useState('')
+  const [searchModule, setSearchModule] = useState(false)
+  const searchRef = useRef<HTMLInputElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     loadData().then(setData)
+  }, [])
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f' && searchRef.current) {
+        e.preventDefault()
+        searchRef.current.select()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
   }, [])
 
   if (!data) return null
@@ -97,10 +122,10 @@ export default function App() {
   async function addSlides(moduleId: string, files: File[]) {
     let next = data!
     for (const file of files) {
-      let numPages
+      let read
       try {
         const task = pdfjs.getDocument({ data: await file.arrayBuffer() })
-        numPages = (await task.promise).numPages
+        read = await readPages(await task.promise)
         await task.destroy()
       } catch {
         alert(`${file.name} konnte nicht als PDF gelesen werden.`)
@@ -114,12 +139,7 @@ export default function App() {
         slides: [...next.slides, { id, moduleId, lectureNum: `VL${count}` }],
         pages: [
           ...next.pages,
-          ...Array.from({ length: numPages }, (_, i) => ({
-            slidesId: id,
-            page: i + 1,
-            title: '',
-            hidden: false,
-          })),
+          ...read.map((r, i) => ({ slidesId: id, page: i + 1, ...r, hidden: false })),
         ],
       }
     }
@@ -128,6 +148,110 @@ export default function App() {
 
   const patchSlides = (id: string, patch: Partial<Slides>) =>
     update({ ...data, slides: data.slides.map((s) => (s.id === id ? { ...s, ...patch } : s)) })
+
+  const patchPage = (slidesId: string, page: number, patch: Partial<Slide>) =>
+    update({
+      ...data,
+      pages: data.pages.map((p) =>
+        p.slidesId === slidesId && p.page === page ? { ...p, ...patch } : p,
+      ),
+    })
+
+  function openSlides(id: string, target?: number) {
+    setSel({ kind: 'slides', id })
+    setPage(target ?? data!.pages.find((p) => p.slidesId === id && !p.hidden)?.page ?? 1)
+  }
+
+  const currentPage = slides
+    ? data.pages.find((p) => p.slidesId === slides.id && p.page === page)
+    : undefined
+
+  const moduleSlides = module ? data.slides.filter((s) => s.moduleId === module.id) : []
+
+  const searchModuleId = module ? module.id : slides ? slides.moduleId : undefined
+  const scope =
+    slides && !searchModule
+      ? [slides.id]
+      : data.slides.filter((s) => s.moduleId === searchModuleId).map((s) => s.id)
+  const order = (p: Slide) => scope.indexOf(p.slidesId) * 100000 + p.page
+  const q = normalize(query)
+  const hits = q
+    ? data.pages
+        .filter(
+          (p) => scope.includes(p.slidesId) && normalize(`${p.title} ${p.text ?? ''}`).includes(q),
+        )
+        .sort((a, b) => order(a) - order(b))
+    : []
+  const here = currentPage ? order(currentPage) : -1
+  const hitIndex = hits.findIndex((h) => order(h) === here)
+  const nextHit = hits.find((h) => order(h) > here) ?? hits[0]
+  const prevHit = hits.findLast((h) => order(h) < here) ?? hits.at(-1)
+  const goHit = (h?: Slide) => h && openSlides(h.slidesId, h.page)
+
+  const searchBar = (
+    <Group gap={4} align="flex-end" w={slides ? undefined : '100%'}>
+      <TextInput
+        ref={searchRef}
+        w={slides ? 220 : undefined}
+        flex={slides ? undefined : 1}
+        label={slides ? 'Suche' : undefined}
+        placeholder="Strg+F"
+        value={query}
+        onChange={(e) => setQuery(e.currentTarget.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') goHit(e.shiftKey ? prevHit : nextHit)
+          if (e.key === 'Escape') setQuery('')
+        }}
+        rightSectionWidth={slides ? 56 : 28}
+        rightSection={
+          <Group gap={0} wrap="nowrap">
+            {query && (
+              <ActionIcon size="sm" variant="subtle" color="gray" onClick={() => setQuery('')}>
+                <IconX size={14} />
+              </ActionIcon>
+            )}
+            {slides && (
+              <Tooltip
+                label={searchModule ? 'Sucht im ganzen Modul' : 'Sucht nur in diesem Foliensatz'}
+              >
+                <ActionIcon
+                  size="sm"
+                  variant={searchModule ? 'light' : 'subtle'}
+                  color={searchModule ? 'blue' : 'gray'}
+                  onClick={() => setSearchModule((m) => !m)}
+                >
+                  <IconFiles size={14} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+          </Group>
+        }
+      />
+      {slides && (
+        <>
+          <ActionIcon
+            variant="default"
+            size="lg"
+            disabled={!hits.length}
+            onClick={() => goHit(prevHit)}
+          >
+            <IconChevronUp size={16} />
+          </ActionIcon>
+          <ActionIcon
+            variant="default"
+            size="lg"
+            disabled={!hits.length}
+            onClick={() => goHit(nextHit)}
+          >
+            <IconChevronDown size={16} />
+          </ActionIcon>
+          <Text size="sm" c="dimmed" w={60} mb={6}>
+            {q && `${hitIndex + 1 || '–'} / ${hits.length}`}
+          </Text>
+        </>
+      )}
+    </Group>
+  )
 
   const toggleHidden = (slidesId: string, page: number) =>
     update({
@@ -243,7 +367,7 @@ export default function App() {
                                           depth={3}
                                           label={sl.lectureNum}
                                           active={sel?.kind === 'slides' && sel.id === sl.id}
-                                          onClick={() => setSel({ kind: 'slides', id: sl.id })}
+                                          onClick={() => openSlides(sl.id)}
                                           onDelete={() =>
                                             confirmRemove({ kind: 'slides', id: sl.id })
                                           }
@@ -293,27 +417,27 @@ export default function App() {
             <IconLayoutSidebarLeftExpand />
           </ActionIcon>
         )}
-        <Stack key={JSON.stringify(sel)} h="100dvh" p="md" gap="sm">
-          {!slides && (
+        <Stack h="100dvh" p="md" gap="sm">
+          {!slides && !module && (
             <Title order={3}>
-              {sel?.kind === 'program'
-                ? 'Studiengang'
-                : semester
-                  ? 'Semester'
-                  : module
-                    ? 'Modul'
-                    : ''}
+              {sel?.kind === 'program' ? 'Studiengang' : semester ? 'Semester' : ''}
             </Title>
           )}
           {sel?.kind === 'program' && (
             <Group align="flex-end" gap="xs">
-              <Field label="Name" value={sel.name} onSave={(v) => renameProgram(sel.name, v)} />
+              <Field
+                key={sel.name}
+                label="Name"
+                value={sel.name}
+                onSave={(v) => renameProgram(sel.name, v)}
+              />
               {deleteButton}
             </Group>
           )}
           {semester && (
             <Group align="flex-end" gap="xs">
               <Field
+                key={semester.id}
                 label="Name"
                 value={semester.name}
                 onSave={(v) => patchSemester(semester.id, { name: v })}
@@ -323,49 +447,158 @@ export default function App() {
           )}
           {module && (
             <>
-              <Group align="flex-end" gap="xs">
-                <Field
-                  label="Kürzel"
-                  value={module.short}
-                  onSave={(v) => patchModule(module.id, { short: v })}
-                />
-                {deleteButton}
-              </Group>
-              <Field
-                label="Name"
-                value={module.name}
-                onSave={(v) => patchModule(module.id, { name: v })}
-              />
-              <Field
-                label="Dozent"
-                value={module.lecturer}
-                onSave={(v) => patchModule(module.id, { lecturer: v })}
-              />
-              <Dropzone
-                maw={500}
-                accept={PDF_MIME_TYPE}
-                onDrop={(files) => addSlides(module.id, files)}
+              <Stack gap="sm">
+                <Title order={3}>Modul</Title>
+                <Group align="flex-end" gap="xs" wrap="nowrap">
+                  <Field
+                    key={module.id}
+                    w={90}
+                    label="Kürzel"
+                    value={module.short}
+                    onSave={(v) => patchModule(module.id, { short: v })}
+                  />
+                  <Field
+                    key={module.id + 'name'}
+                    flex={1}
+                    label="Name"
+                    value={module.name}
+                    onSave={(v) => patchModule(module.id, { name: v })}
+                  />
+                  <Field
+                    key={module.id + 'lecturer'}
+                    flex={1}
+                    label="Dozent*in"
+                    value={module.lecturer}
+                    onSave={(v) => patchModule(module.id, { lecturer: v })}
+                  />
+                  {deleteButton}
+                </Group>
+              </Stack>
+              <Divider my="md" />
+
+              <SimpleGrid
+                cols={3}
+                spacing="lg"
+                flex={1}
+                mih={0}
+                style={{ gridTemplateRows: 'minmax(0, 1fr)' }}
               >
-                <Text ta="center" py="xl">
-                  Vorlesungsfolien (PDF) hierher ziehen oder klicken
-                </Text>
-              </Dropzone>
+                <Stack gap="sm">
+                  <Title order={5}>Karteikarten</Title>
+                </Stack>
+
+                <Stack gap="sm" mih={0}>
+                  <Group justify="space-between">
+                    <Title order={5}>Foliensätze</Title>
+                    <Button size="xs" variant="light" onClick={() => fileRef.current?.click()}>
+                      + Hochladen
+                    </Button>
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept="application/pdf"
+                      multiple
+                      hidden
+                      onChange={(e) => {
+                        addSlides(module.id, [...(e.target.files ?? [])])
+                        e.target.value = ''
+                      }}
+                    />
+                  </Group>
+                  <ScrollArea flex={1}>
+                    <Table highlightOnHover stickyHeader>
+                      <Table.Thead>
+                        <Table.Tr>
+                          <Table.Th>Vorlesung</Table.Th>
+                          <Table.Th>Titel</Table.Th>
+                          <Table.Th>Folien</Table.Th>
+                        </Table.Tr>
+                      </Table.Thead>
+                      <Table.Tbody>
+                        {moduleSlides.map((sl) => {
+                          const ps = data.pages.filter((p) => p.slidesId === sl.id)
+                          return (
+                            <Table.Tr
+                              key={sl.id}
+                              style={{ cursor: 'pointer' }}
+                              onClick={() => openSlides(sl.id)}
+                            >
+                              <Table.Td>{sl.lectureNum}</Table.Td>
+                              <Table.Td>{ps[0]?.title}</Table.Td>
+                              <Table.Td>
+                                {ps.filter((p) => !p.hidden).length}{' '}
+                                <Text span c="dimmed">
+                                  ({ps.length})
+                                </Text>
+                              </Table.Td>
+                            </Table.Tr>
+                          )
+                        })}
+                        <Table.Tr
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => fileRef.current?.click()}
+                        >
+                          <Table.Td colSpan={3} c="dimmed">
+                            + Foliensatz hochladen
+                          </Table.Td>
+                        </Table.Tr>
+                      </Table.Tbody>
+                    </Table>
+                  </ScrollArea>
+                </Stack>
+
+                <Stack gap="sm" mih={0}>
+                  <Title order={5}>Suche</Title>
+                  {searchBar}
+                  {q && (
+                    <ScrollArea flex={1}>
+                      {hits.length === 0 && <Text c="dimmed">Keine Treffer</Text>}
+                      {hits.map((h) => (
+                        <NavLink
+                          key={h.slidesId + h.page}
+                          label={[
+                            data.slides.find((s) => s.id === h.slidesId)?.lectureNum,
+                            `Folie ${h.page}`,
+                            h.title,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
+                          description={snippet(h.text ?? '', q)}
+                          onClick={() => openSlides(h.slidesId, h.page)}
+                        />
+                      ))}
+                    </ScrollArea>
+                  )}
+                </Stack>
+              </SimpleGrid>
             </>
           )}
           {slides && (
             <>
               <Group align="flex-end" gap="xs">
                 <Field
+                  key={slides.id}
+                  w={90}
                   label="Vorlesung"
                   value={slides.lectureNum}
                   onSave={(v) => patchSlides(slides.id, { lectureNum: v })}
                 />
-                {deleteButton}
+                <Field
+                  key={slides.id + page}
+                  w={400}
+                  label="Folientitel"
+                  value={currentPage?.title ?? ''}
+                  onSave={(v) => patchPage(slides.id, page, { title: v })}
+                />
+                {searchBar}
               </Group>
               <Viewer
                 key={slides.id}
                 slidesId={slides.id}
                 pages={data.pages.filter((p) => p.slidesId === slides.id)}
+                page={page}
+                hits={new Set(hits.filter((h) => h.slidesId === slides.id).map((h) => h.page))}
+                onPage={setPage}
                 onToggleHidden={(page) => toggleHidden(slides.id, page)}
               />
             </>
@@ -434,10 +667,17 @@ function TreeItem(props: {
 
 // Speichert erst beim Verlassen des Feldes, sonst würde z.B. ein Studiengang beim Tippen
 // kurzzeitig einen gleichnamigen anderen treffen und mit ihm verschmelzen.
-function Field(props: { label: string; value: string; onSave: (v: string) => void }) {
+function Field(props: {
+  label: string
+  value: string
+  w?: number
+  flex?: number
+  onSave: (v: string) => void
+}) {
   return (
     <TextInput
-      w={500}
+      w={props.flex ? undefined : (props.w ?? 500)}
+      flex={props.flex}
       maw="100%"
       label={props.label}
       defaultValue={props.value}
@@ -446,4 +686,13 @@ function Field(props: { label: string; value: string; onSave: (v: string) => voi
       }}
     />
   )
+}
+
+const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim()
+
+function snippet(text: string, q: string) {
+  const flat = text.replace(/\s+/g, ' ')
+  const i = flat.toLowerCase().indexOf(q)
+  if (i < 0) return ''
+  return (i > 40 ? '…' : '') + flat.slice(Math.max(0, i - 40), i + q.length + 40) + '…'
 }

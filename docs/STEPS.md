@@ -12,7 +12,7 @@
 - [x] **1. Datenschicht** (`src/db.ts`): Typen, `loadData`/`saveData`, PDFs unter eigenem Key
 - [x] **2. Ordnerstruktur**: AppShell, Baum Studiengang / Semester / Modul, anlegen und umbenennen
 - [x] **3. PDF-Upload und Viewer**: Dropzone im Modul, Seiten mit pdf.js rendern, blättern, Folien ausblenden
-- [ ] **4. Text, Suche und Folientitel**: beim Upload `getTextContent()` pro Seite speichern, Suche, Titelvorschlag
+- [x] **4. Text, Suche und Folientitel**: beim Upload `getTextContent()` pro Seite speichern, Suche, Titelvorschlag
 - [ ] **5. Themen**: im Viewer "ab hier Thema X" mit Ebene 1–3 setzen, Vorschlag aus `getOutline()`
 - [ ] **6. Excel-Export**: exceljs, ein Blatt pro Modul, Aufbau wie `Vorlesungsinhalte.xlsx`
 - [ ] **7. Karteikarten**: aus dem Viewer anlegen, mit Link zur aktuellen Folie
