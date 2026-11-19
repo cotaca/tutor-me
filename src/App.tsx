@@ -1,6 +1,23 @@
 import { useEffect, useState } from 'react'
-import { AppShell, Button, Group, NavLink, Stack, Text, TextInput, Title } from '@mantine/core'
+import {
+  ActionIcon,
+  AppShell,
+  Group,
+  NavLink,
+  ScrollArea,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core'
 import { Dropzone, PDF_MIME_TYPE } from '@mantine/dropzone'
+import {
+  IconLayoutSidebarLeftCollapse,
+  IconLayoutSidebarLeftExpand,
+  IconTrash,
+  IconChevronDown,
+  IconChevronRight,
+} from '@tabler/icons-react'
 import * as pdfjs from 'pdfjs-dist'
 import {
   deletePdf,
@@ -23,6 +40,8 @@ type Selection =
 export default function App() {
   const [data, setData] = useState<Data>()
   const [sel, setSel] = useState<Selection>()
+  const [navOpen, setNavOpen] = useState(true)
+  const [collapsed, setCollapsed] = useState(new Set<string>())
 
   useEffect(() => {
     loadData().then(setData)
@@ -71,6 +90,9 @@ export default function App() {
       ...data,
       semesters: data.semesters.map((s) => (s.id === id ? { ...s, ...patch } : s)),
     })
+
+  const patchModule = (id: string, patch: Partial<Module>) =>
+    update({ ...data, modules: data.modules.map((m) => (m.id === id ? { ...m, ...patch } : m)) })
 
   async function addSlides(moduleId: string, files: File[]) {
     let next = data!
@@ -148,106 +170,167 @@ export default function App() {
     for (const id of slidesIds) await deletePdf(id)
   }
 
+  const toggle = (key: string) =>
+    setCollapsed((c) => {
+      const next = new Set(c)
+      if (!next.delete(key)) next.add(key)
+      return next
+    })
+
+  const confirmRemove = (target: Selection) => {
+    if (confirm('Wirklich löschen? Alles darunter wird mit gelöscht.')) remove(target)
+  }
+
   const deleteButton = sel && (
-    <Button
-      color="red"
-      variant="light"
-      w="fit-content"
-      onClick={() => {
-        if (confirm('Wirklich löschen? Alles darunter wird mit gelöscht.')) remove(sel)
-      }}
-    >
-      Löschen
-    </Button>
+    <ActionIcon size="lg" variant="subtle" color="red" onClick={() => confirmRemove(sel)}>
+      <IconTrash size={20} />
+    </ActionIcon>
   )
 
-  const patchModule = (id: string, patch: Partial<Module>) =>
-    update({ ...data, modules: data.modules.map((m) => (m.id === id ? { ...m, ...patch } : m)) })
-
   return (
-    <AppShell navbar={{ width: 300, breakpoint: 'sm' }} padding="md">
-      <AppShell.Navbar p="xs">
-        {programs.map((p) => (
-          <div key={p}>
-            <NavLink
-              label={p || '(ohne Namen)'}
-              active={sel?.kind === 'program' && sel.name === p}
-              onClick={() => setSel({ kind: 'program', name: p })}
-            />
-            {data.semesters
-              .filter((s) => s.program === p)
-              .map((s) => (
-                <div key={s.id}>
-                  <NavLink
-                    pl="lg"
-                    label={s.name}
-                    active={sel?.kind === 'semester' && sel.id === s.id}
-                    onClick={() => setSel({ kind: 'semester', id: s.id })}
-                  />
-                  {data.modules
-                    .filter((m) => m.semesterId === s.id)
-                    .map((m) => (
-                      <div key={m.id}>
-                        <NavLink
-                          pl="xl"
-                          label={m.short ? `${m.short} – ${m.name}` : m.name}
-                          active={sel?.kind === 'module' && sel.id === m.id}
-                          onClick={() => setSel({ kind: 'module', id: m.id })}
+    <AppShell
+      navbar={{ width: 240, breakpoint: 0, collapsed: { desktop: !navOpen, mobile: !navOpen } }}
+    >
+      <AppShell.Navbar p={4}>
+        <ScrollArea flex={1}>
+          {programs.map((p) => (
+            <div key={p}>
+              <TreeItem
+                depth={0}
+                label={p || '(ohne Namen)'}
+                active={sel?.kind === 'program' && sel.name === p}
+                open={!collapsed.has(`program:${p}`)}
+                onToggle={() => toggle(`program:${p}`)}
+                onClick={() => setSel({ kind: 'program', name: p })}
+                onDelete={() => confirmRemove({ kind: 'program', name: p })}
+              />
+              {!collapsed.has(`program:${p}`) && (
+                <>
+                  {data.semesters
+                    .filter((s) => s.program === p)
+                    .map((s) => (
+                      <div key={s.id}>
+                        <TreeItem
+                          depth={1}
+                          label={s.name}
+                          active={sel?.kind === 'semester' && sel.id === s.id}
+                          open={!collapsed.has(s.id)}
+                          onToggle={() => toggle(s.id)}
+                          onClick={() => setSel({ kind: 'semester', id: s.id })}
+                          onDelete={() => confirmRemove({ kind: 'semester', id: s.id })}
                         />
-                        {data.slides
-                          .filter((sl) => sl.moduleId === m.id)
-                          .map((sl) => (
-                            <NavLink
-                              key={sl.id}
-                              pl={48}
-                              label={sl.lectureNum}
-                              active={sel?.kind === 'slides' && sel.id === sl.id}
-                              onClick={() => setSel({ kind: 'slides', id: sl.id })}
+                        {!collapsed.has(s.id) && (
+                          <>
+                            {data.modules
+                              .filter((m) => m.semesterId === s.id)
+                              .map((m) => (
+                                <div key={m.id}>
+                                  <TreeItem
+                                    depth={2}
+                                    label={m.short ? `${m.short} – ${m.name}` : m.name}
+                                    active={sel?.kind === 'module' && sel.id === m.id}
+                                    open={!collapsed.has(m.id)}
+                                    onToggle={() => toggle(m.id)}
+                                    onClick={() => setSel({ kind: 'module', id: m.id })}
+                                    onDelete={() => confirmRemove({ kind: 'module', id: m.id })}
+                                  />
+                                  {!collapsed.has(m.id) &&
+                                    data.slides
+                                      .filter((sl) => sl.moduleId === m.id)
+                                      .map((sl) => (
+                                        <TreeItem
+                                          key={sl.id}
+                                          depth={3}
+                                          label={sl.lectureNum}
+                                          active={sel?.kind === 'slides' && sel.id === sl.id}
+                                          onClick={() => setSel({ kind: 'slides', id: sl.id })}
+                                          onDelete={() =>
+                                            confirmRemove({ kind: 'slides', id: sl.id })
+                                          }
+                                        />
+                                      ))}
+                                </div>
+                              ))}
+                            <TreeItem
+                              depth={2}
+                              dimmed
+                              label="+ Modul"
+                              onClick={() => addModule(s.id)}
                             />
-                          ))}
+                          </>
+                        )}
                       </div>
                     ))}
-                  <NavLink pl="xl" c="dimmed" label="+ Modul" onClick={() => addModule(s.id)} />
-                </div>
-              ))}
-            <NavLink pl="lg" c="dimmed" label="+ Semester" onClick={() => addSemester(p)} />
-          </div>
-        ))}
-        <NavLink
-          c="dimmed"
-          label="+ Studiengang"
-          onClick={() => addSemester('Neuer Studiengang')}
-        />
+                  <TreeItem depth={1} dimmed label="+ Semester" onClick={() => addSemester(p)} />
+                </>
+              )}
+            </div>
+          ))}
+          <TreeItem
+            depth={0}
+            dimmed
+            label="+ Studiengang"
+            onClick={() => addSemester('Neuer Studiengang')}
+          />
+        </ScrollArea>
+        <Group justify="flex-end">
+          <ActionIcon variant="subtle" color="gray" onClick={() => setNavOpen(false)}>
+            <IconLayoutSidebarLeftCollapse />
+          </ActionIcon>
+        </Group>
       </AppShell.Navbar>
 
       <AppShell.Main>
-        <Stack key={JSON.stringify(sel)}>
+        {!navOpen && (
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            pos="fixed"
+            bottom={4}
+            left={4}
+            onClick={() => setNavOpen(true)}
+          >
+            <IconLayoutSidebarLeftExpand />
+          </ActionIcon>
+        )}
+        <Stack key={JSON.stringify(sel)} h="100dvh" p="md" gap="sm">
+          {!slides && (
+            <Title order={3}>
+              {sel?.kind === 'program'
+                ? 'Studiengang'
+                : semester
+                  ? 'Semester'
+                  : module
+                    ? 'Modul'
+                    : ''}
+            </Title>
+          )}
           {sel?.kind === 'program' && (
-            <>
-              <Title order={3}>Studiengang</Title>
+            <Group align="flex-end" gap="xs">
               <Field label="Name" value={sel.name} onSave={(v) => renameProgram(sel.name, v)} />
               {deleteButton}
-            </>
+            </Group>
           )}
           {semester && (
-            <>
-              <Title order={3}>Semester</Title>
+            <Group align="flex-end" gap="xs">
               <Field
                 label="Name"
                 value={semester.name}
                 onSave={(v) => patchSemester(semester.id, { name: v })}
               />
               {deleteButton}
-            </>
+            </Group>
           )}
           {module && (
             <>
-              <Title order={3}>Modul</Title>
-              <Field
-                label="Kürzel"
-                value={module.short}
-                onSave={(v) => patchModule(module.id, { short: v })}
-              />
+              <Group align="flex-end" gap="xs">
+                <Field
+                  label="Kürzel"
+                  value={module.short}
+                  onSave={(v) => patchModule(module.id, { short: v })}
+                />
+                {deleteButton}
+              </Group>
               <Field
                 label="Name"
                 value={module.name}
@@ -258,8 +341,11 @@ export default function App() {
                 value={module.lecturer}
                 onSave={(v) => patchModule(module.id, { lecturer: v })}
               />
-              {deleteButton}
-              <Dropzone accept={PDF_MIME_TYPE} onDrop={(files) => addSlides(module.id, files)}>
+              <Dropzone
+                maw={500}
+                accept={PDF_MIME_TYPE}
+                onDrop={(files) => addSlides(module.id, files)}
+              >
                 <Text ta="center" py="xl">
                   Vorlesungsfolien (PDF) hierher ziehen oder klicken
                 </Text>
@@ -268,7 +354,7 @@ export default function App() {
           )}
           {slides && (
             <>
-              <Group align="flex-end">
+              <Group align="flex-end" gap="xs">
                 <Field
                   label="Vorlesung"
                   value={slides.lectureNum}
@@ -290,12 +376,69 @@ export default function App() {
   )
 }
 
+function TreeItem(props: {
+  depth: number
+  label: string
+  active?: boolean
+  dimmed?: boolean
+  open?: boolean
+  onToggle?: () => void
+  onClick: () => void
+  onDelete?: () => void
+}) {
+  return (
+    <NavLink
+      className="hover-parent"
+      pl={8 + props.depth * 14}
+      py={3}
+      c={props.dimmed ? 'dimmed' : undefined}
+      label={props.label}
+      active={props.active}
+      leftSection={
+        props.onToggle ? (
+          <ActionIcon
+            size="xs"
+            variant="subtle"
+            color="gray"
+            onClick={(e) => {
+              e.stopPropagation()
+              props.onToggle!()
+            }}
+          >
+            {props.open ? <IconChevronDown size={14} /> : <IconChevronRight size={14} />}
+          </ActionIcon>
+        ) : (
+          <span style={{ width: 18 }} />
+        )
+      }
+      onClick={props.onClick}
+      rightSection={
+        props.onDelete && (
+          <ActionIcon
+            className="hover-only"
+            size="sm"
+            variant="subtle"
+            color="red"
+            onClick={(e) => {
+              e.stopPropagation()
+              props.onDelete!()
+            }}
+          >
+            <IconTrash size={14} />
+          </ActionIcon>
+        )
+      }
+    />
+  )
+}
+
 // Speichert erst beim Verlassen des Feldes, sonst würde z.B. ein Studiengang beim Tippen
 // kurzzeitig einen gleichnamigen anderen treffen und mit ihm verschmelzen.
 function Field(props: { label: string; value: string; onSave: (v: string) => void }) {
   return (
     <TextInput
-      maw={500}
+      w={500}
+      maw="100%"
       label={props.label}
       defaultValue={props.value}
       onBlur={(e) => {
