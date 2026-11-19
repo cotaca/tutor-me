@@ -8,11 +8,11 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "format": "prettier --write .",
+    "check": "node scripts/check-title.ts",
     "preview": "vite preview"
   },
   "dependencies": {
     "@mantine/core": "^9.8.1",
-    "@mantine/dropzone": "^9.8.1",
     "@mantine/hooks": "^9.8.1",
     "@tabler/icons-react": "^3.52.0",
     "exceljs": "^4.4.0",
