@@ -2,6 +2,7 @@ import assert from 'node:assert'
 import type { Data } from '../src/lib/db.ts'
 import { guessTitle, isTask } from '../src/lib/pdfText.ts'
 import { buildSheet } from '../src/lib/sheet.ts'
+import { addDays, isDue, review } from '../src/lib/learn.ts'
 import { addTopic, chain, hueOf, moveTopic, removeTopic } from '../src/lib/topics.ts'
 
 // Titel-Heuristik
@@ -102,5 +103,14 @@ assert.deepEqual(
   sheet.rows.map((r) => r.cells[4]?.text),
   ['1', '2', '1', '2'],
 )
+
+// Leitner: gewusst = ein Fach weiter mit dessen Intervall, nicht gewusst = Fach 1, heute fällig
+const card = { id: 'k', moduleId: 'm', question: '', answer: '', box: 1, due: '2026-01-30' }
+assert.equal(addDays('2026-01-30', 2), '2026-02-01')
+assert.deepEqual(review(card, true, '2026-01-30'), { box: 2, due: '2026-02-01' })
+assert.deepEqual(review({ ...card, box: 5 }, true, '2026-01-30'), { box: 5, due: '2026-02-15' })
+assert.deepEqual(review({ ...card, box: 4 }, false, '2026-01-30'), { box: 1, due: '2026-01-30' })
+assert.equal(isDue(card, '2026-01-29'), false)
+assert.equal(isDue(card, '2026-01-30'), true)
 
 console.log('check ok')

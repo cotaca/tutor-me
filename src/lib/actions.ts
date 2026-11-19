@@ -8,6 +8,7 @@ export type Selection =
   | { kind: 'semester'; id: string }
   | { kind: 'module'; id: string }
   | { kind: 'slides'; id: string }
+  | { kind: 'learn'; moduleId: string; title: string; cardIds: string[] }
 
 export function patchById<K extends 'semesters' | 'modules' | 'slides' | 'topics' | 'cards'>(
   data: Data,

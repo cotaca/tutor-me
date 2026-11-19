@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from 'react'
 import { Button, Group, Paper, ScrollArea, Select, Stack, Text, Title } from '@mantine/core'
+import { today } from '../lib/cards'
 import type { Card } from '../lib/db'
+import { isDue } from '../lib/learn'
 import { CardForm } from './CardForm'
 
 type Props = {
@@ -17,6 +19,8 @@ type Props = {
   // true: Formular für neue Karten immer sichtbar (Karten-Modus), sonst hinter "+ Karteikarte".
   alwaysShowForm?: boolean
   empty: string
+  // Startet eine Lernrunde mit den gerade angezeigten (ggf. gefilterten) Karten.
+  onLearn?: (cards: Card[], filterLabel?: string) => void
 }
 
 export function CardList(props: Props) {
@@ -39,11 +43,27 @@ export function CardList(props: Props) {
     <Stack gap="sm" mih={0} h="100%">
       <Group justify="space-between" wrap="nowrap">
         <Title order={5}>{props.title}</Title>
-        {!props.alwaysShowForm && !adding && (
-          <Button size="xs" variant="light" onClick={() => setAdding(true)}>
-            + Karteikarte
-          </Button>
-        )}
+        <Group gap="xs" wrap="nowrap">
+          {props.onLearn && (
+            <Button
+              size="xs"
+              disabled={!shown.length}
+              onClick={() =>
+                props.onLearn!(
+                  shown,
+                  props.filter?.options.find((o) => o.value === filterValue)?.label,
+                )
+              }
+            >
+              Lernen ({shown.filter((c) => isDue(c, today())).length} fällig)
+            </Button>
+          )}
+          {!props.alwaysShowForm && !adding && (
+            <Button size="xs" variant="light" onClick={() => setAdding(true)}>
+              + Karteikarte
+            </Button>
+          )}
+        </Group>
       </Group>
       {props.filter && props.filter.options.length > 0 && (
         <Select

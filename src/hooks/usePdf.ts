@@ -3,11 +3,10 @@ import * as pdfjs from 'pdfjs-dist'
 import type { PDFDocumentProxy } from 'pdfjs-dist'
 import { loadPdf } from '../lib/db'
 
-// Lädt die PDF eines Foliensatzes und erzeugt nach und nach die Vorschaubilder.
-// Beides wird mit der id gespeichert, damit beim Wechsel nichts vom alten Foliensatz durchscheint.
-export function usePdf(slidesId: string) {
+// Lädt die PDF eines Foliensatzes. Wird mit der id gespeichert,
+// damit beim Wechsel nichts vom alten Foliensatz durchscheint.
+export function usePdfDoc(slidesId: string) {
   const [doc, setDoc] = useState<{ id: string; doc: PDFDocumentProxy }>()
-  const [thumbs, setThumbs] = useState<{ id: string; urls: string[] }>()
 
   useEffect(() => {
     let cancelled = false
@@ -27,13 +26,21 @@ export function usePdf(slidesId: string) {
     }
   }, [slidesId])
 
+  return doc?.id === slidesId ? doc.doc : undefined
+}
+
+// Wie usePdfDoc, erzeugt zusätzlich nach und nach die Vorschaubilder aller Seiten.
+export function usePdf(slidesId: string) {
+  const doc = usePdfDoc(slidesId)
+  const [thumbs, setThumbs] = useState<{ doc: PDFDocumentProxy; urls: string[] }>()
+
   // ponytail: rendert alle Vorschaubilder beim Öffnen; bei sehr langen PDFs auf Lazy-Rendering umstellen.
   useEffect(() => {
     if (!doc) return
     let cancelled = false
     ;(async () => {
-      for (let i = 1; i <= doc.doc.numPages && !cancelled; i++) {
-        const p = await doc.doc.getPage(i)
+      for (let i = 1; i <= doc.numPages && !cancelled; i++) {
+        const p = await doc.getPage(i)
         const viewport = p.getViewport({ scale: 240 / p.getViewport({ scale: 1 }).width })
         const canvas = document.createElement('canvas')
         canvas.width = viewport.width
@@ -41,7 +48,7 @@ export function usePdf(slidesId: string) {
         await p.render({ canvas, viewport }).promise
         const url = canvas.toDataURL('image/jpeg', 0.7)
         if (cancelled) return
-        setThumbs((t) => ({ id: doc.id, urls: t?.id === doc.id ? [...t.urls, url] : [url] }))
+        setThumbs((t) => ({ doc, urls: t?.doc === doc ? [...t.urls, url] : [url] }))
       }
     })().catch(() => {})
     return () => {
@@ -49,8 +56,5 @@ export function usePdf(slidesId: string) {
     }
   }, [doc])
 
-  return {
-    doc: doc?.id === slidesId ? doc.doc : undefined,
-    thumbs: thumbs?.id === slidesId ? thumbs.urls : [],
-  }
+  return { doc, thumbs: thumbs && thumbs.doc === doc ? thumbs.urls : [] }
 }

@@ -23,5 +23,5 @@
   - [x] Text auf der Folie markieren und kopieren, mindestens im Karten-Modus (Textebene von pdf.js über der Folie)
   - [ ] Formatierung in Frage und Antwort: Markdown und Formeln
   - [ ] Bilder in der Antwort: beliebigen Ausschnitt der Folie per Rahmen auswählen und als Bild einfügen
-- [ ] **8. Lernmodus**: fällige Karten abfragen, richtig = nächstes Fach, falsch = Fach 1
+- [x] **8. Lernmodus**: Lernrunde pro Modul bzw. gefiltertem Thema, Leitner (Fächer 1–5, Intervalle 1/2/4/8/16 Tage), nicht gewusste Karten wiederholen sich in der Runde
 - [ ] **9. Backup**: alle Daten als JSON exportieren und importieren

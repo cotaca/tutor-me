@@ -21,7 +21,9 @@ import {
 } from './lib/db'
 import { ModuleView } from './views/ModuleView'
 import { hitNavigation, search } from './lib/search'
-import { addCard, linkLabel, removeCard } from './lib/cards'
+import { addCard, linkLabel, removeCard, today } from './lib/cards'
+import { review } from './lib/learn'
+import { LearnView } from './views/LearnView'
 import { addTopic, assignTopic, chain, moveTopic, pathLabel, removeTopic } from './lib/topics'
 import { CardItem } from './components/CardItem'
 import { CardList } from './components/CardList'
@@ -147,6 +149,14 @@ export default function App() {
         cards={data.cards.filter((c) => c.moduleId === module.id)}
         empty="Noch keine Karteikarten."
         onAdd={actions.onAddCard}
+        onLearn={(cards, filterLabel) =>
+          setSel({
+            kind: 'learn',
+            moduleId: module.id,
+            title: filterLabel ?? (module.short || module.name),
+            cardIds: cards.map((c) => c.id),
+          })
+        }
         filter={{
           label: 'Nach Thema filtern',
           options: topics.map((t) => ({ value: t.id, label: pathLabel(topics, t.id) })),
@@ -246,6 +256,20 @@ export default function App() {
                 </>
               }
               cards={moduleCards(module)}
+            />
+          )}
+          {sel?.kind === 'learn' && (
+            <LearnView
+              key={JSON.stringify(sel)}
+              title={sel.title}
+              cards={data.cards.filter((c) => sel.cardIds.includes(c.id))}
+              linkLabel={(c) => linkLabel(data, c)}
+              onReview={(id, known) => {
+                const card = data.cards.find((c) => c.id === id)!
+                update(patchById(data, 'cards', id, review(card, known, today())))
+              }}
+              onOpenSlide={openSlides}
+              onExit={() => setSel({ kind: 'module', id: sel.moduleId })}
             />
           )}
           {slides && (
