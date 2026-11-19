@@ -24,4 +24,4 @@
   - [ ] Formatierung in Frage und Antwort: Markdown und Formeln
   - [ ] Bilder in der Antwort: beliebigen Ausschnitt der Folie per Rahmen auswählen und als Bild einfügen
 - [x] **8. Lernmodus**: Lernrunde pro Modul bzw. gefiltertem Thema, Leitner (Fächer 1–5, Intervalle 1/2/4/8/16 Tage), nicht gewusste Karten wiederholen sich in der Runde
-- [ ] **9. Backup**: alle Daten als JSON exportieren und importieren
+- [x] **9. Backup**: eine JSON-Datei mit allen Daten und PDFs (Base64), Import ersetzt alles nach Rückfrage

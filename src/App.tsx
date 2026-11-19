@@ -23,6 +23,7 @@ import { ModuleView } from './views/ModuleView'
 import { hitNavigation, search } from './lib/search'
 import { addCard, linkLabel, removeCard, today } from './lib/cards'
 import { review } from './lib/learn'
+import { exportBackup, importBackup } from './lib/backupFile'
 import { LearnView } from './views/LearnView'
 import { addTopic, assignTopic, chain, moveTopic, pathLabel, removeTopic } from './lib/topics'
 import { CardItem } from './components/CardItem'
@@ -190,6 +191,18 @@ export default function App() {
           onAddModule={addModule}
           onDelete={confirmRemove}
           onClose={() => setNavOpen(false)}
+          onExport={() =>
+            exportBackup(data).catch((e) => alert(`Export fehlgeschlagen: ${e.message}`))
+          }
+          onImport={async (file) => {
+            if (!confirm('Backup importieren? Alle aktuellen Daten werden dabei ersetzt.')) return
+            try {
+              setData(await importBackup(file))
+              setSel(undefined)
+            } catch (e) {
+              alert(`Import fehlgeschlagen: ${e instanceof Error ? e.message : e}`)
+            }
+          }}
         />
       </AppShell.Navbar>
 

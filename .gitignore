@@ -22,3 +22,4 @@ Thumbs.db
 # Testdaten (Vorlesungsfolien, Exporte)
 *.pdf
 *.xlsx
+tutor-me-backup-*.json

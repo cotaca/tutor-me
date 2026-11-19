@@ -1,4 +1,5 @@
 import type { Data, Semester } from './db'
+import { download } from './download'
 import { buildSheet, isTaskCell, TASK_FILL } from './sheet'
 
 export const excelFileName = (semester: Semester) => `${semester.name} – Vorlesungsinhalte.xlsx`
@@ -53,14 +54,7 @@ export async function exportSemester(data: Data, semester: Semester) {
   const blob = new Blob([buffer], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = excelFileName(semester)
-  document.body.append(a)
-  a.click()
-  a.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
+  download(blob, excelFileName(semester))
 }
 
 // Excel erlaubt höchstens 31 Zeichen, keine []:*?/\ und keine doppelten Blattnamen.

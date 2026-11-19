@@ -3,6 +3,7 @@ import type { Data } from '../src/lib/db.ts'
 import { guessTitle, isTask } from '../src/lib/pdfText.ts'
 import { buildSheet } from '../src/lib/sheet.ts'
 import { addDays, isDue, review } from '../src/lib/learn.ts'
+import { makeBackup, parseBackup } from '../src/lib/backup.ts'
 import { addTopic, chain, hueOf, moveTopic, removeTopic } from '../src/lib/topics.ts'
 
 // Titel-Heuristik
@@ -112,5 +113,15 @@ assert.deepEqual(review({ ...card, box: 5 }, true, '2026-01-30'), { box: 5, due:
 assert.deepEqual(review({ ...card, box: 4 }, false, '2026-01-30'), { box: 1, due: '2026-01-30' })
 assert.equal(isDue(card, '2026-01-29'), false)
 assert.equal(isDue(card, '2026-01-30'), true)
+
+// Backup: Rundweg, Ablehnung fremder oder unvollständiger Dateien
+const backupData = { ...data, slides: [{ id: 's1', moduleId: 'm', lectureNum: 'VL1' }] }
+const roundtrip = parseBackup(JSON.stringify(makeBackup(backupData, { s1: 'QUJD' })))
+assert.deepEqual(roundtrip.data, backupData)
+assert.throws(() => parseBackup('kein json'), /kein gültiges JSON/)
+assert.throws(() => parseBackup('{"app":"andere"}'), /kein tutor-me-Backup/)
+assert.throws(() => parseBackup(JSON.stringify(makeBackup(backupData, {}))), /fehlen 1 PDF/)
+const old = parseBackup(JSON.stringify({ app: 'tutor-me', data: { semesters: [] }, pdfs: {} }))
+assert.deepEqual(old.data.cards, []) // fehlende Listen aus älteren Backups werden ergänzt
 
 console.log('check ok')

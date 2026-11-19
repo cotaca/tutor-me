@@ -39,5 +39,5 @@ npm run lint
 
 ## Hinweise
 
-- Die Daten hängen an Browser und Gerät. Wer den Browser-Speicher löscht, verliert alles, also regelmäßig den JSON-Export als Backup nutzen.
+- Die Daten hängen an Browser und Gerät. Wer den Browser-Speicher löscht, verliert alles, also regelmäßig ein Backup exportieren (Datenbank-Symbol unten in der Seitenleiste). Das Backup enthält auch alle PDFs und lässt sich auf einem anderen Gerät wieder importieren.
 - PDFs und Excel-Dateien sind per `.gitignore` ausgeschlossen, damit keine Vorlesungsfolien ins Repo gelangen.

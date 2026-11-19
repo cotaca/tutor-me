@@ -1,8 +1,11 @@
-import { useState } from 'react'
-import { ActionIcon, Group, NavLink, ScrollArea } from '@mantine/core'
+import { useRef, useState } from 'react'
+import { ActionIcon, Group, Menu, NavLink, ScrollArea } from '@mantine/core'
 import {
   IconChevronDown,
   IconChevronRight,
+  IconDatabase,
+  IconDownload,
+  IconUpload,
   IconLayoutSidebarLeftCollapse,
   IconTrash,
 } from '@tabler/icons-react'
@@ -18,6 +21,8 @@ type Props = {
   onAddModule: (semesterId: string) => void
   onDelete: (target: Selection) => void
   onClose: () => void
+  onExport: () => void
+  onImport: (file: File) => void
 }
 
 export function Sidebar({
@@ -29,8 +34,11 @@ export function Sidebar({
   onAddModule,
   onDelete,
   onClose,
+  onExport,
+  onImport,
 }: Props) {
   const [collapsed, setCollapsed] = useState(new Set<string>())
+  const fileRef = useRef<HTMLInputElement>(null)
   const programs = [...new Set(data.semesters.map((s) => s.program))]
 
   const isOpen = (key: string) => !collapsed.has(key)
@@ -120,7 +128,36 @@ export function Sidebar({
           onClick={() => onAddSemester('Neuer Studiengang')}
         />
       </ScrollArea>
-      <Group justify="flex-end">
+      <Group justify="space-between">
+        <Menu position="top-start">
+          <Menu.Target>
+            <ActionIcon variant="subtle" color="gray" title="Backup">
+              <IconDatabase />
+            </ActionIcon>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item leftSection={<IconDownload size={14} />} onClick={onExport}>
+              Backup exportieren
+            </Menu.Item>
+            <Menu.Item
+              leftSection={<IconUpload size={14} />}
+              onClick={() => fileRef.current?.click()}
+            >
+              Backup importieren
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json,.json"
+          hidden
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            e.target.value = ''
+            if (file) onImport(file)
+          }}
+        />
         <ActionIcon variant="subtle" color="gray" onClick={onClose}>
           <IconLayoutSidebarLeftCollapse />
         </ActionIcon>

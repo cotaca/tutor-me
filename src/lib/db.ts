@@ -1,4 +1,4 @@
-import { get, set, del } from 'idb-keyval'
+import { del, delMany, get, keys, set } from 'idb-keyval'
 
 export type Semester = { id: string; program: string; name: string }
 export type Module = {
@@ -47,9 +47,17 @@ export type Data = {
   cards: Card[]
 }
 
+export const emptyData = (): Data => ({
+  semesters: [],
+  modules: [],
+  slides: [],
+  pages: [],
+  topics: [],
+  cards: [],
+})
+
 export async function loadData(): Promise<Data> {
-  const empty: Data = { semesters: [], modules: [], slides: [], pages: [], topics: [], cards: [] }
-  return { ...empty, ...(await get<Data>('data')) }
+  return { ...emptyData(), ...(await get<Data>('data')) }
 }
 
 export const saveData = (data: Data) => set('data', data)
@@ -58,3 +66,10 @@ export const saveData = (data: Data) => set('data', data)
 export const loadPdf = (slidesId: string) => get<Blob>(`pdf:${slidesId}`)
 export const savePdf = (slidesId: string, pdf: Blob) => set(`pdf:${slidesId}`, pdf)
 export const deletePdf = (slidesId: string) => del(`pdf:${slidesId}`)
+
+// Löscht alle gespeicherten PDFs, die nicht zu den angegebenen Foliensätzen gehören.
+export async function deletePdfsExcept(slidesIds: string[]) {
+  const keep = new Set(slidesIds.map((id) => `pdf:${id}`))
+  const stale = (await keys()).filter((k) => String(k).startsWith('pdf:') && !keep.has(String(k)))
+  await delMany(stale)
+}
