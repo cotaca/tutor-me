@@ -10,10 +10,21 @@ import {
   renameProgram,
   type Selection,
 } from './lib/actions'
-import { deletePdf, loadData, saveData, type Data, type Slide } from './lib/db'
+import {
+  deletePdf,
+  loadData,
+  saveData,
+  type Card,
+  type Data,
+  type Module,
+  type Slide,
+} from './lib/db'
 import { ModuleView } from './views/ModuleView'
 import { hitNavigation, search } from './lib/search'
-import { addTopic, assignTopic, moveTopic, removeTopic } from './lib/topics'
+import { addCard, linkLabel, removeCard } from './lib/cards'
+import { addTopic, assignTopic, chain, moveTopic, pathLabel, removeTopic } from './lib/topics'
+import { CardItem } from './components/CardItem'
+import { CardList } from './components/CardList'
 import { SearchBar, SearchResults } from './components/SearchBar'
 import { Sidebar } from './components/Sidebar'
 import { SlidesView } from './views/SlidesView'
@@ -96,6 +107,14 @@ export default function App() {
   )
   const goHit = (h?: Slide) => h && openSlides(h.slidesId, h.page)
 
+  const cardActions = (moduleId: string) => ({
+    onAddCard: (card: Pick<Card, 'question' | 'answer' | 'link'>) =>
+      update(addCard(data, { ...card, id: crypto.randomUUID(), moduleId })),
+    onPatchCard: (id: string, change: Partial<Card>) =>
+      update(patchById(data, 'cards', id, change)),
+    onRemoveCard: (id: string) => update(removeCard(data, id)),
+  })
+
   const searchBar = (
     <SearchBar
       inputRef={searchRef}
@@ -115,6 +134,37 @@ export default function App() {
       }
     />
   )
+
+  // Kartenliste der Modulseite, mit Filter nach dem Thema der verknüpften Folie.
+  const moduleCards = (module: Module) => {
+    const topics = data.topics.filter((t) => t.moduleId === module.id)
+    const actions = cardActions(module.id)
+    const topicOf = (c: Card) =>
+      data.pages.find((p) => p.slidesId === c.link?.slidesId && p.page === c.link.page)?.topicId
+    return (
+      <CardList
+        title="Karteikarten"
+        cards={data.cards.filter((c) => c.moduleId === module.id)}
+        empty="Noch keine Karteikarten."
+        onAdd={actions.onAddCard}
+        filter={{
+          label: 'Nach Thema filtern',
+          options: topics.map((t) => ({ value: t.id, label: pathLabel(topics, t.id) })),
+          matches: (c, id) => chain(topics, topicOf(c)).some((t) => t.id === id),
+        }}
+        renderCard={(c) => (
+          <CardItem
+            key={c.id}
+            card={c}
+            link={linkLabel(data, c)}
+            onOpenLink={() => c.link && openSlides(c.link.slidesId, c.link.page)}
+            onPatch={(change) => actions.onPatchCard(c.id, change)}
+            onRemove={() => actions.onRemoveCard(c.id)}
+          />
+        )}
+      />
+    )
+  }
 
   return (
     <AppShell
@@ -195,6 +245,7 @@ export default function App() {
                   />
                 </>
               }
+              cards={moduleCards(module)}
             />
           )}
           {slides && (
@@ -218,6 +269,8 @@ export default function App() {
               onPatchTopic={(id, change) => update(patchById(data, 'topics', id, change))}
               onRemoveTopic={(id) => update(removeTopic(data, id))}
               onMoveTopic={(id, step) => update(moveTopic(data, id, step))}
+              cards={data.cards.filter((c) => c.moduleId === slides.moduleId)}
+              {...cardActions(slides.moduleId)}
             />
           )}
         </Stack>

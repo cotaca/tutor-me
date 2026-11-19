@@ -19,6 +19,7 @@ type Props = {
   slides: Slides[]
   pages: Slide[]
   search: ReactNode
+  cards: ReactNode
   onPatch: (change: Partial<Module>) => void
   onUpload: (files: File[]) => void
   onOpenSlides: (id: string) => void
@@ -30,6 +31,7 @@ export function ModuleView({
   slides,
   pages,
   search,
+  cards,
   onPatch,
   onUpload,
   onOpenSlides,
@@ -73,9 +75,7 @@ export function ModuleView({
         mih={0}
         style={{ gridTemplateRows: 'minmax(0, 1fr)' }}
       >
-        <Stack gap="sm">
-          <Title order={5}>Karteikarten</Title>
-        </Stack>
+        {cards}
 
         <SlidesTable slides={slides} pages={pages} onOpen={onOpenSlides} onUpload={onUpload} />
 

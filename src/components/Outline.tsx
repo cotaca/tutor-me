@@ -10,6 +10,7 @@ type Props = {
   thumbs: string[]
   topics: Topic[]
   stripes: (page: Slide) => string[]
+  cardCount: (page: Slide) => number
   onPatchPages: (pages: number[], change: Partial<Slide>) => void
   onAssign: (pages: number[], topicId?: string) => void
   onAddTopic: (parentId: string | undefined, assignTo: number[]) => void
@@ -84,6 +85,7 @@ export function Outline(props: Props) {
                   url={props.thumbs[i]}
                   hidden={p.hidden}
                   task={!!p.task}
+                  cards={props.cardCount(p)}
                   border={selected.includes(p.page) ? 'blue-6' : 'gray-3'}
                   stripes={props.stripes(p)}
                   onClick={(e) => select(p.page, e)}

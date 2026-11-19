@@ -19,10 +19,9 @@
   - [x] Tabellenmodell pro Modul (gemeinsame Grundlage für Vorschau und Export)
   - [x] Vorschau: ein Reiter pro Modul, Textbearbeitung per Doppelklick schreibt in die App-Daten zurück
   - [x] Export mit exceljs: `<Semester> – Vorlesungsinhalte.xlsx`
-- [ ] **7. Karteikarten**: aus dem Viewer anlegen, mit Link zur aktuellen Folie
+- [x] **7. Karteikarten**: Modus "Karten" im Foliensatz (Folie bleibt sichtbar), Liste mit Themenfilter auf der Modulseite, Kartenzahl an den Vorschaubildern
+  - [ ] Text auf der Folie markieren und kopieren, mindestens im Karten-Modus (Textebene von pdf.js über der Folie)
+  - [ ] Formatierung in Frage und Antwort: Markdown und Formeln
+  - [ ] Bilder in der Antwort: beliebigen Ausschnitt der Folie per Rahmen auswählen und als Bild einfügen
 - [ ] **8. Lernmodus**: fällige Karten abfragen, richtig = nächstes Fach, falsch = Fach 1
 - [ ] **9. Backup**: alle Daten als JSON exportieren und importieren
-
-## Offene Fragen
-
-- Lernmodus: `box` und `due` an `Card` ergänzen (Leitner) oder etwas anderes geplant?

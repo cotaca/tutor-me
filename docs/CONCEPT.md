@@ -35,7 +35,7 @@ type Module = { id; semesterId; short; name; lecturer }
 type Slides = { id; moduleId; lectureNum: string; pdf: Blob }
 type Slide = { slidesId; page; title; text; hidden: boolean; note?: string; topicId?; task? }
 type Topic = { id; moduleId; parentId?; title; color? }
-type Card = { id; moduleId; question; answer; link?: { slidesId; page } }
+type Card = { id; moduleId; question; answer; link?: { slidesId; page }; box: 1–5; due: ISO-Datum }
 ```
 
 ## Umsetzung der Funktionen

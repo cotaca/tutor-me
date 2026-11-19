@@ -34,6 +34,8 @@ export type Card = {
   question: string
   answer: string
   link?: { slidesId: string; page: number }
+  box: number // Leitner-Fach 1–5
+  due: string // ISO-Datum der nächsten Abfrage
 }
 
 export type Data = {

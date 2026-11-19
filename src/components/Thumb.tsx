@@ -1,11 +1,12 @@
 import type { MouseEvent } from 'react'
-import { ActionIcon } from '@mantine/core'
-import { IconEye, IconEyeOff, IconPencil } from '@tabler/icons-react'
+import { ActionIcon, Badge } from '@mantine/core'
+import { IconCards, IconEye, IconEyeOff, IconPencil } from '@tabler/icons-react'
 
 type Props = {
   url?: string
   hidden: boolean
   task: boolean
+  cards?: number
   border: string // Mantine-Farbe wie 'blue-6'
   stripes: string[] // Themenfarben, eine pro Ebene
   onClick: (e: MouseEvent) => void
@@ -17,6 +18,7 @@ export function Thumb({
   url,
   hidden,
   task,
+  cards,
   border,
   stripes,
   onClick,
@@ -60,6 +62,20 @@ export function Thumb({
       >
         {hidden ? <IconEyeOff size={14} /> : <IconEye size={14} />}
       </ActionIcon>
+      {!!cards && (
+        <Badge
+          pos="absolute"
+          bottom={4}
+          left={10}
+          size="sm"
+          variant="white"
+          color="dark"
+          leftSection={<IconCards size={12} />}
+          style={{ boxShadow: 'var(--mantine-shadow-md)' }}
+        >
+          {cards}
+        </Badge>
+      )}
       <ActionIcon
         className={task ? undefined : 'hover-only'}
         pos="absolute"

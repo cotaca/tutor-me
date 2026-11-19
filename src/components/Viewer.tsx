@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ActionIcon, Group, ScrollArea, Stack, Text } from '@mantine/core'
 import {
   IconChevronLeft,
@@ -21,6 +21,9 @@ type Props = {
   hits: Set<number>
   query: string
   stripes: (page: Slide) => string[]
+  cardCount: (page: Slide) => number
+  // Ersetzt die Vorschauspalte (Karten-Modus).
+  side?: ReactNode
   onPage: (page: number) => void
   onPatchPages: (pages: number[], change: Partial<Slide>) => void
 }
@@ -33,6 +36,8 @@ export function Viewer({
   hits,
   query,
   stripes,
+  cardCount,
+  side,
   onPage: setPage,
   onPatchPages,
 }: Props) {
@@ -156,9 +161,12 @@ export function Viewer({
           </div>
         </div>
 
+        {side && (
+          <div style={{ width: 360, flexShrink: 0, marginLeft: 16, minHeight: 0 }}>{side}</div>
+        )}
         <div
           style={{
-            display: 'flex',
+            display: side ? 'none' : 'flex',
             flexShrink: 0,
             overflow: 'hidden',
             width: thumbsOpen ? THUMBS_WIDTH + 12 : 0,
@@ -173,6 +181,7 @@ export function Viewer({
                   url={thumbs[i]}
                   hidden={p.hidden}
                   task={!!p.task}
+                  cards={cardCount(p)}
                   border={p.page === page ? 'blue-6' : hits.has(p.page) ? 'yellow-5' : 'gray-3'}
                   stripes={stripes(p)}
                   onClick={() => setPage(p.page)}
@@ -202,6 +211,7 @@ export function Viewer({
           variant="subtle"
           color="gray"
           pos="absolute"
+          display={side ? 'none' : undefined}
           left={`calc(100% - ${thumbsOpen ? THUMBS_WIDTH : 28}px)`}
           style={{ transition: 'left 200ms ease' }}
           onClick={() => setThumbsOpen((o) => !o)}

@@ -1,12 +1,14 @@
 import { useState, type ReactNode } from 'react'
 import { ActionIcon, Group, SegmentedControl, Text, Tooltip } from '@mantine/core'
 import { IconPencil } from '@tabler/icons-react'
+import { CardItem } from '../components/CardItem'
+import { CardList } from '../components/CardList'
 import { Field } from '../components/Field'
 import { HEADER_HEIGHT } from '../components/layout'
 import { Outline } from '../components/Outline'
 import { Viewer } from '../components/Viewer'
 import { usePdf } from '../hooks/usePdf'
-import type { Slide, Slides, Topic } from '../lib/db'
+import type { Card, Slide, Slides, Topic } from '../lib/db'
 import { pathLabel, stripes } from '../lib/topics'
 
 type Props = {
@@ -25,6 +27,10 @@ type Props = {
   onPatchTopic: (id: string, change: Partial<Topic>) => void
   onRemoveTopic: (id: string) => void
   onMoveTopic: (id: string, step: -1 | 1) => void
+  cards: Card[]
+  onAddCard: (card: Pick<Card, 'question' | 'answer' | 'link'>) => void
+  onPatchCard: (id: string, change: Partial<Card>) => void
+  onRemoveCard: (id: string) => void
 }
 
 export function SlidesView(props: Props) {
@@ -33,6 +39,8 @@ export function SlidesView(props: Props) {
   const { doc, thumbs } = usePdf(slides.id)
   const current = pages.find((p) => p.page === page)
   const stripesOf = (p: Slide) => stripes(topics, p.topicId)
+  const cardsOf = (n: number) =>
+    props.cards.filter((c) => c.link?.slidesId === slides.id && c.link.page === n)
 
   const modeSwitch = (
     <SegmentedControl
@@ -41,13 +49,14 @@ export function SlidesView(props: Props) {
       data={[
         { label: 'Lesen', value: 'read' },
         { label: 'Gliedern', value: 'outline' },
+        { label: 'Karten', value: 'cards' },
       ]}
     />
   )
 
   // Die Felder hängen per key an Foliensatz und Seite, nicht die ganze Ansicht:
   // so behält das Suchfeld den Fokus, wenn die Suche in einen anderen Foliensatz springt.
-  return mode === 'read' ? (
+  return mode !== 'outline' ? (
     <>
       <Group align="flex-end" gap="xs" h={HEADER_HEIGHT}>
         <Field
@@ -89,6 +98,26 @@ export function SlidesView(props: Props) {
         hits={props.hits}
         query={props.query}
         stripes={stripesOf}
+        cardCount={(p) => cardsOf(p.page).length}
+        side={
+          mode === 'cards' && (
+            <CardList
+              title={`Karteikarten zu Folie ${page}`}
+              cards={cardsOf(page)}
+              alwaysShowForm
+              empty="Noch keine Karten zu dieser Folie."
+              onAdd={(card) => props.onAddCard({ ...card, link: { slidesId: slides.id, page } })}
+              renderCard={(c) => (
+                <CardItem
+                  key={c.id}
+                  card={c}
+                  onPatch={(change) => props.onPatchCard(c.id, change)}
+                  onRemove={() => props.onRemoveCard(c.id)}
+                />
+              )}
+            />
+          )
+        }
         onPage={props.onPage}
         onPatchPages={props.onPatchPages}
       />
@@ -100,6 +129,7 @@ export function SlidesView(props: Props) {
       thumbs={thumbs}
       topics={topics}
       stripes={stripesOf}
+      cardCount={(p) => cardsOf(p.page).length}
       modeSwitch={modeSwitch}
       onPatchPages={props.onPatchPages}
       onAssign={props.onAssign}
