@@ -1,6 +1,6 @@
 import assert from 'node:assert'
 import type { Data } from '../src/lib/db.ts'
-import { guessTitle, isTask, matchRects } from '../src/lib/pdfText.ts'
+import { guessTitle, isTask } from '../src/lib/pdfText.ts'
 import { buildSheet } from '../src/lib/sheet.ts'
 import { addTopic, chain, hueOf, moveTopic, removeTopic } from '../src/lib/topics.ts'
 
@@ -61,14 +61,6 @@ assert.deepEqual(ids(moveTopic(data, 'd', -1)), ['d', 'b', 'c', 'a'])
 assert.deepEqual(ids(moveTopic(data, 'a', -1)), ids(data))
 assert.deepEqual(ids(moveTopic(data, 'b', 1)), ids(data))
 assert.equal(addTopic(data, 'e', 'm').topics.at(-1)?.color, 'blue')
-
-// Treffer-Markierung: Position über den Zeichenanteil, mehrere Treffer pro Textstück
-const line = { str: 'Big Data und big data', transform: [10, 0, 0, 10, 100, 200], width: 210 }
-assert.deepEqual(matchRects([line], 'BIG data'), [
-  [100, 197.5, 180, 208.5],
-  [230, 197.5, 310, 208.5],
-])
-assert.deepEqual(matchRects([line], '  '), [])
 
 // Aufgaben-Erkennung
 assert.equal(isTask('Exercise: Big Data Sources', ''), true)

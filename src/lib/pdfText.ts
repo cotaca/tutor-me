@@ -37,23 +37,3 @@ export function isTask(title: string, text: string) {
   const firstLine = text.split('\n').find((l) => l.trim()) ?? ''
   return TASK_WORD.test(title) || TASK_WORD.test(firstLine)
 }
-
-// Rechtecke (PDF-Koordinaten x1, y1, x2, y2) aller Treffer des Suchbegriffs.
-// ponytail: nur Treffer innerhalb eines Textstücks; Treffer über Stückgrenzen hinweg werden nicht markiert.
-// Die x-Position im Stück wird über den Zeichenanteil geschätzt (bei Proportionalschrift leicht ungenau).
-export function matchRects(items: (TextPiece & { width: number })[], query: string) {
-  const q = query.toLowerCase().replace(/\s+/g, ' ').trim()
-  const rects: number[][] = []
-  if (!q) return rects
-  for (const it of items) {
-    const str = it.str.toLowerCase()
-    const size = Math.hypot(it.transform[2], it.transform[3])
-    const [x, y] = [it.transform[4], it.transform[5]]
-    for (let i = str.indexOf(q); i >= 0; i = str.indexOf(q, i + q.length)) {
-      const from = x + (it.width * i) / str.length
-      const to = x + (it.width * (i + q.length)) / str.length
-      rects.push([from, y - size * 0.25, to, y + size * 0.85])
-    }
-  }
-  return rects
-}

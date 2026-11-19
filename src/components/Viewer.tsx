@@ -9,7 +9,7 @@ import {
 import { TextLayer } from 'pdfjs-dist'
 import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist'
 import type { Slide } from '../lib/db'
-import { matchRects } from '../lib/pdfText'
+import { highlightRects } from '../lib/highlight'
 import { Thumb } from './Thumb'
 
 const THUMBS_WIDTH = 150
@@ -46,7 +46,10 @@ export function Viewer({
   const [thumbsOpen, setThumbsOpen] = useState(true)
   // Markierungen gehören zu Seite, Suchbegriff und Größe; passen sie nicht mehr, werden sie nicht gezeigt.
   const [marks, setMarks] = useState<{ key: string; rects: number[][] }>()
-  const markKey = `${page}|${query}|${size.width}x${size.height}`
+  // Kennung der gerade fertig aufgebauten Textebene (Seite und Größe).
+  const [textReady, setTextReady] = useState<string>()
+  const layerKey = `${page}|${size.width}x${size.height}`
+  const markKey = `${layerKey}|${query}`
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const textRef = useRef<HTMLDivElement>(null)
   const boxRef = useRef<HTMLDivElement>(null)
@@ -104,7 +107,11 @@ export function Viewer({
         container: layer,
         viewport: p.getViewport({ scale }),
       })
-      text.render().catch(() => {})
+      const key = `${page}|${size.width}x${size.height}`
+      text.render().then(
+        () => !cancelled && setTextReady(key),
+        () => {},
+      )
     })
     return () => {
       cancelled = true
@@ -113,28 +120,18 @@ export function Viewer({
     }
   }, [doc, page, size])
 
+  // Neu markieren, wenn die Textebene fertig ist oder sich der Suchbegriff ändert.
+  // requestAnimationFrame: erst nach dem Layout messen (und kein setState direkt im Effect).
   useEffect(() => {
-    if (!doc || !query.trim() || !size.width || !size.height) return
-    let cancelled = false
-    ;(async () => {
-      const p = await doc.getPage(page)
-      const content = await p.getTextContent()
-      const base = p.getViewport({ scale: 1 })
-      const viewport = p.getViewport({
-        scale: Math.min(size.width / base.width, size.height / base.height),
-      })
-      const items = content.items.flatMap((it) => ('str' in it ? [it] : []))
-      const rects = matchRects(items, query).map((r) => {
-        const [x1, y1] = viewport.convertToViewportPoint(r[0], r[1])
-        const [x2, y2] = viewport.convertToViewportPoint(r[2], r[3])
-        return [Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1)]
-      })
-      if (!cancelled) setMarks({ key: `${page}|${query}|${size.width}x${size.height}`, rects })
-    })().catch(() => {})
-    return () => {
-      cancelled = true
-    }
-  }, [doc, page, size, query])
+    if (!textReady) return
+    const id = requestAnimationFrame(() => {
+      const layer = textRef.current
+      const box = layer?.parentElement
+      if (layer && box)
+        setMarks({ key: `${textReady}|${query}`, rects: highlightRects(layer, box, query) })
+    })
+    return () => cancelAnimationFrame(id)
+  }, [textReady, query])
 
   return (
     <>
