@@ -1,0 +1,7 @@
+.hover-parent .hover-only {
+  visibility: hidden;
+}
+
+.hover-parent:hover .hover-only {
+  visibility: visible;
+}

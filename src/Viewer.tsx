@@ -1,8 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button, Group, Switch, Text } from '@mantine/core'
+import { ActionIcon, Group, ScrollArea, Text } from '@mantine/core'
+import {
+  IconChevronLeft,
+  IconChevronRight,
+  IconEye,
+  IconEyeOff,
+  IconLayoutSidebarRightCollapse,
+  IconLayoutSidebarRightExpand,
+} from '@tabler/icons-react'
 import * as pdfjs from 'pdfjs-dist'
 import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist'
 import { loadPdf, type Slide } from './db'
+
+const THUMBS_WIDTH = 150
 
 type Props = {
   slidesId: string
@@ -12,35 +22,33 @@ type Props = {
 
 export function Viewer({ slidesId, pages, onToggleHidden }: Props) {
   const [doc, setDoc] = useState<PDFDocumentProxy>()
-  const [page, setPage] = useState(1)
-  const [showHidden, setShowHidden] = useState(false)
-  const [width, setWidth] = useState(0)
+  const [page, setPage] = useState(() => pages.find((p) => !p.hidden)?.page ?? 1)
+  const [size, setSize] = useState({ width: 0, height: 0 })
+  const [thumbs, setThumbs] = useState<string[]>([])
+  const [thumbsOpen, setThumbsOpen] = useState(true)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const boxRef = useRef<HTMLDivElement>(null)
 
-  const visible = pages.filter((p) => showHidden || !p.hidden)
-  const found = visible.findIndex((p) => p.page >= page)
-  const index = found === -1 ? visible.length - 1 : found
-  const current = visible[index]
-  const currentPage = current?.page
-
-  const go = (step: number) => {
-    const target = visible[index + step]
-    if (target) setPage(target.page)
-  }
+  const visible = pages.filter((p) => !p.hidden)
+  const current = pages.find((p) => p.page === page)
+  const prev = visible.findLast((p) => p.page < page)
+  const next = visible.find((p) => p.page > page)
+  const position = visible.findIndex((p) => p.page === page) + 1
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-      if (e.key === 'ArrowLeft') go(-1)
-      if (e.key === 'ArrowRight') go(1)
+      if (e.key === 'ArrowLeft' && prev) setPage(prev.page)
+      if (e.key === 'ArrowRight' && next) setPage(next.page)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   })
 
   useEffect(() => {
-    const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width))
+    const observer = new ResizeObserver(([entry]) =>
+      setSize({ width: entry.contentRect.width, height: entry.contentRect.height }),
+    )
     observer.observe(boxRef.current!)
     return () => observer.disconnect()
   }, [])
@@ -60,17 +68,41 @@ export function Viewer({ slidesId, pages, onToggleHidden }: Props) {
     }
   }, [slidesId])
 
+  // ponytail: rendert alle Vorschaubilder beim Öffnen; bei sehr langen PDFs auf Lazy-Rendering umstellen.
   useEffect(() => {
-    if (!doc || !currentPage || !width) return
+    if (!doc) return
+    let cancelled = false
+    ;(async () => {
+      for (let i = 1; i <= doc.numPages && !cancelled; i++) {
+        const p = await doc.getPage(i)
+        const viewport = p.getViewport({ scale: 240 / p.getViewport({ scale: 1 }).width })
+        const canvas = document.createElement('canvas')
+        canvas.width = viewport.width
+        canvas.height = viewport.height
+        await p.render({ canvas, viewport }).promise
+        const url = canvas.toDataURL('image/jpeg', 0.7)
+        if (!cancelled) setThumbs((t) => [...t, url])
+      }
+    })().catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [doc])
+
+  useEffect(() => {
+    if (!doc || !size.width || !size.height) return
     let cancelled = false
     let task: RenderTask | undefined
-    doc.getPage(currentPage).then((p) => {
+    doc.getPage(page).then((p) => {
       const canvas = canvasRef.current
       if (cancelled || !canvas) return
-      const scale = width / p.getViewport({ scale: 1 }).width
+      const base = p.getViewport({ scale: 1 })
+      const scale = Math.min(size.width / base.width, size.height / base.height)
       const viewport = p.getViewport({ scale: scale * devicePixelRatio })
       canvas.width = viewport.width
       canvas.height = viewport.height
+      canvas.style.width = `${base.width * scale}px`
+      canvas.style.height = `${base.height * scale}px`
       task = p.render({ canvas, viewport })
       task.promise.catch((e) => {
         if (e?.name !== 'RenderingCancelledException') console.error(e)
@@ -80,38 +112,103 @@ export function Viewer({ slidesId, pages, onToggleHidden }: Props) {
       cancelled = true
       task?.cancel()
     }
-  }, [doc, currentPage, width])
+  }, [doc, page, size])
 
   return (
     <>
-      <Group>
-        <Button variant="default" disabled={index <= 0} onClick={() => go(-1)}>
-          ←
-        </Button>
-        <Text>
-          Seite {currentPage ?? '–'} / {pages.length}
-        </Text>
-        <Button variant="default" disabled={index >= visible.length - 1} onClick={() => go(1)}>
-          →
-        </Button>
-        {current && (
-          <Button variant="light" onClick={() => onToggleHidden(current.page)}>
-            {current.hidden ? 'Einblenden' : 'Ausblenden'}
-          </Button>
-        )}
-        <Switch
-          label="Ausgeblendete zeigen"
-          checked={showHidden}
-          onChange={(e) => setShowHidden(e.currentTarget.checked)}
-        />
+      <Group flex={1} mih={0} align="stretch" wrap="nowrap" gap={0}>
+        <div
+          ref={boxRef}
+          style={{
+            flex: 1,
+            minWidth: 0,
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <canvas ref={canvasRef} style={{ opacity: current?.hidden ? 0.4 : 1 }} />
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            flexShrink: 0,
+            overflow: 'hidden',
+            width: thumbsOpen ? THUMBS_WIDTH + 12 : 0,
+            transition: 'width 200ms ease',
+          }}
+        >
+          <ScrollArea w={THUMBS_WIDTH} ml={12} type="auto" offsetScrollbars>
+            {pages.map((p, i) => (
+              <div
+                key={p.page}
+                className="hover-parent"
+                onClick={() => setPage(p.page)}
+                style={{
+                  position: 'relative',
+                  cursor: 'pointer',
+                  marginBottom: 8,
+                  border: `2px solid ${p.page === page ? 'var(--mantine-color-blue-6)' : 'var(--mantine-color-gray-3)'}`,
+                }}
+              >
+                {thumbs[i] ? (
+                  <img
+                    src={thumbs[i]}
+                    style={{ display: 'block', width: '100%', opacity: p.hidden ? 0.4 : 1 }}
+                  />
+                ) : (
+                  <div
+                    style={{ aspectRatio: '16 / 9', background: 'var(--mantine-color-gray-1)' }}
+                  />
+                )}
+                <ActionIcon
+                  className={p.hidden ? undefined : 'hover-only'}
+                  pos="absolute"
+                  top={4}
+                  right={4}
+                  size="sm"
+                  variant="white"
+                  color="dark"
+                  style={{ boxShadow: 'var(--mantine-shadow-md)' }}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onToggleHidden(p.page)
+                  }}
+                >
+                  {p.hidden ? <IconEyeOff size={14} /> : <IconEye size={14} />}
+                </ActionIcon>
+              </div>
+            ))}
+          </ScrollArea>
+        </div>
       </Group>
-      <div ref={boxRef}>
-        {current ? (
-          <canvas ref={canvasRef} style={{ width: '100%', opacity: current.hidden ? 0.4 : 1 }} />
-        ) : (
-          <Text c="dimmed">Alle Folien sind ausgeblendet.</Text>
-        )}
-      </div>
+
+      <Group justify="center" gap="xs" pos="relative">
+        <ActionIcon variant="default" disabled={!prev} onClick={() => prev && setPage(prev.page)}>
+          <IconChevronLeft size={16} />
+        </ActionIcon>
+        <Text>
+          {position || '–'} / {visible.length}{' '}
+          <Text span c="dimmed">
+            ({pages.length})
+          </Text>
+        </Text>
+        <ActionIcon variant="default" disabled={!next} onClick={() => next && setPage(next.page)}>
+          <IconChevronRight size={16} />
+        </ActionIcon>
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          pos="absolute"
+          left={`calc(100% - ${thumbsOpen ? THUMBS_WIDTH : 28}px)`}
+          style={{ transition: 'left 200ms ease' }}
+          onClick={() => setThumbsOpen((o) => !o)}
+        >
+          {thumbsOpen ? <IconLayoutSidebarRightCollapse /> : <IconLayoutSidebarRightExpand />}
+        </ActionIcon>
+      </Group>
     </>
   )
 }
