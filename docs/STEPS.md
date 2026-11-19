@@ -20,7 +20,7 @@
   - [x] Vorschau: ein Reiter pro Modul, Textbearbeitung per Doppelklick schreibt in die App-Daten zurück
   - [x] Export mit exceljs: `<Semester> – Vorlesungsinhalte.xlsx`
 - [x] **7. Karteikarten**: Modus "Karten" im Foliensatz (Folie bleibt sichtbar), Liste mit Themenfilter auf der Modulseite, Kartenzahl an den Vorschaubildern
-  - [ ] Text auf der Folie markieren und kopieren, mindestens im Karten-Modus (Textebene von pdf.js über der Folie)
+  - [x] Text auf der Folie markieren und kopieren, mindestens im Karten-Modus (Textebene von pdf.js über der Folie)
   - [ ] Formatierung in Frage und Antwort: Markdown und Formeln
   - [ ] Bilder in der Antwort: beliebigen Ausschnitt der Folie per Rahmen auswählen und als Bild einfügen
 - [ ] **8. Lernmodus**: fällige Karten abfragen, richtig = nächstes Fach, falsch = Fach 1

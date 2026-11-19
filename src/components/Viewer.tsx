@@ -6,6 +6,7 @@ import {
   IconLayoutSidebarRightCollapse,
   IconLayoutSidebarRightExpand,
 } from '@tabler/icons-react'
+import { TextLayer } from 'pdfjs-dist'
 import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist'
 import type { Slide } from '../lib/db'
 import { matchRects } from '../lib/pdfText'
@@ -47,6 +48,7 @@ export function Viewer({
   const [marks, setMarks] = useState<{ key: string; rects: number[][] }>()
   const markKey = `${page}|${query}|${size.width}x${size.height}`
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const textRef = useRef<HTMLDivElement>(null)
   const boxRef = useRef<HTMLDivElement>(null)
 
   const visible = pages.filter((p) => !p.hidden)
@@ -77,9 +79,11 @@ export function Viewer({
     if (!doc || !size.width || !size.height) return
     let cancelled = false
     let task: RenderTask | undefined
+    let text: TextLayer | undefined
     doc.getPage(page).then((p) => {
       const canvas = canvasRef.current
-      if (cancelled || !canvas) return
+      const layer = textRef.current
+      if (cancelled || !canvas || !layer) return
       const base = p.getViewport({ scale: 1 })
       const scale = Math.min(size.width / base.width, size.height / base.height)
       const viewport = p.getViewport({ scale: scale * devicePixelRatio })
@@ -91,10 +95,21 @@ export function Viewer({
       task.promise.catch((e) => {
         if (e?.name !== 'RenderingCancelledException') console.error(e)
       })
+
+      // Unsichtbarer, markierbarer Text deckungsgleich über der Folie (zum Markieren und Kopieren).
+      layer.replaceChildren()
+      layer.style.setProperty('--total-scale-factor', String(scale))
+      text = new TextLayer({
+        textContentSource: p.streamTextContent(),
+        container: layer,
+        viewport: p.getViewport({ scale }),
+      })
+      text.render().catch(() => {})
     })
     return () => {
       cancelled = true
       task?.cancel()
+      text?.cancel()
     }
   }, [doc, page, size])
 
@@ -140,6 +155,7 @@ export function Viewer({
               ref={canvasRef}
               style={{ display: 'block', opacity: current?.hidden ? 0.4 : 1 }}
             />
+            <div ref={textRef} className="textLayer" />
             {query.trim() &&
               marks?.key === markKey &&
               marks.rects.map(([left, top, width, height], i) => (
