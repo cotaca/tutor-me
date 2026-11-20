@@ -31,7 +31,7 @@ Details zu Konzept und Datenmodell stehen in [docs/CONCEPT.md](docs/CONCEPT.md).
 
 ```powershell
 npm install
-npm run dev      # Dev-Server auf http://localhost:5173
+npm run dev      # Dev-Server auf http://localhost:5173/tutor-me/
 npm run lint
 ```
 
