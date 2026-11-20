@@ -1,18 +1,22 @@
-import { useRef, useState, type KeyboardEvent } from 'react'
-import { Button, Group, Stack, Textarea } from '@mantine/core'
+import { useState, type KeyboardEvent } from 'react'
+import { Button, Group, Stack, Text } from '@mantine/core'
+import { MarkdownField } from './MarkdownField'
 
 type Props = {
   initial?: { question: string; answer: string }
   onSave: (card: { question: string; answer: string }) => void
   onCancel?: () => void
+  // Folienausschnitt für die Antwort holen (nur im Karten-Modus mit sichtbarer Folie).
+  onRequestCrop?: () => Promise<string | undefined>
 }
 
 // Ohne initial: Formular für neue Karten, das nach dem Speichern leer und offen bleibt.
 // Strg+Enter speichert, Esc bricht das Bearbeiten ab.
-export function CardForm({ initial, onSave, onCancel }: Props) {
+export function CardForm({ initial, onSave, onCancel, onRequestCrop }: Props) {
   const [question, setQuestion] = useState(initial?.question ?? '')
   const [answer, setAnswer] = useState(initial?.answer ?? '')
-  const questionRef = useRef<HTMLTextAreaElement>(null)
+  // Zähler für angelegte Karten: neue Felder (wieder im Schreibmodus), Fokus auf die Frage.
+  const [round, setRound] = useState(0)
   const valid = question.trim() && answer.trim()
 
   function save() {
@@ -21,7 +25,7 @@ export function CardForm({ initial, onSave, onCancel }: Props) {
     if (!initial) {
       setQuestion('')
       setAnswer('')
-      questionRef.current?.focus()
+      setRound((r) => r + 1)
     }
   }
 
@@ -32,33 +36,38 @@ export function CardForm({ initial, onSave, onCancel }: Props) {
 
   return (
     <Stack gap="xs">
-      <Textarea
-        ref={questionRef}
+      <MarkdownField
+        key={`q${round}`}
         label="Frage"
-        autosize
         minRows={2}
         value={question}
-        onChange={(e) => setQuestion(e.currentTarget.value)}
+        onChange={setQuestion}
         onKeyDown={keys}
-        autoFocus={!!initial}
+        autoFocus={!!initial || round > 0}
       />
-      <Textarea
+      <MarkdownField
+        key={`a${round}`}
         label="Antwort"
-        autosize
         minRows={3}
         value={answer}
-        onChange={(e) => setAnswer(e.currentTarget.value)}
+        onChange={setAnswer}
         onKeyDown={keys}
+        onRequestInsert={onRequestCrop}
       />
-      <Group gap="xs" justify="flex-end">
-        {onCancel && (
-          <Button variant="subtle" color="gray" onClick={onCancel}>
-            Abbrechen
+      <Group gap="xs" justify="space-between">
+        <Text size="xs" c="dimmed">
+          Markdown, Formeln mit $…$ oder $$…$$
+        </Text>
+        <Group gap="xs">
+          {onCancel && (
+            <Button variant="subtle" color="gray" onClick={onCancel}>
+              Abbrechen
+            </Button>
+          )}
+          <Button disabled={!valid} onClick={save} title="Strg+Enter">
+            {initial ? 'Speichern' : 'Karte anlegen'}
           </Button>
-        )}
-        <Button disabled={!valid} onClick={save} title="Strg+Enter">
-          {initial ? 'Speichern' : 'Karte anlegen'}
-        </Button>
+        </Group>
       </Group>
     </Stack>
   )

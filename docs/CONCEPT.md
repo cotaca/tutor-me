@@ -77,3 +77,11 @@ Folientitel, Notiz). Struktur (Themenzuordnung, Reihenfolge) nur im Gliedern-Mod
 `Slide.task`: beim Upload automatisch gesetzt, wenn Titel oder erste Textzeile mit Aufgabe, Übung,
 Exercise, Task oder Quiz beginnt bzw. das Wort enthält. Manuell umschaltbar am Vorschaubild und für
 mehrere Folien im Gliedern-Modus.
+
+### Karteikarten: Formatierung und Folienausschnitte
+
+Frage und Antwort sind Markdown mit Formeln (`$…$`, `$$…$$`), umschaltbar zwischen Schreiben und Vorschau.
+Folienausschnitte sind Markdown-Bilder mit eigener Adresse, es wird keine Bilddatei gespeichert:
+`![Folie 14](slide:<slidesId>/14#x,y,w,h)`, der Rahmen als Anteil der Seite (0–1). Beim Anzeigen wird
+der Ausschnitt direkt aus der PDF gerendert, daher bleibt das Backup unverändert. Andere Bildadressen
+werden nicht geladen (keine Anfragen an fremde Server).

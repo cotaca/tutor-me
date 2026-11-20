@@ -64,3 +64,22 @@
 .textLayer.selecting .endOfContent {
   top: 0;
 }
+
+/* Markdown in Karteikarten: kompakte Abstände statt der Artikel-Abstände von Typography. */
+.rich > :first-child {
+  margin-top: 0;
+}
+
+.rich > :last-child {
+  margin-bottom: 0;
+}
+
+.rich :is(p, ul, ol, pre, blockquote, table) {
+  margin-block: 0.4em;
+}
+
+.rich .katex-display {
+  margin-block: 0.5em;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
