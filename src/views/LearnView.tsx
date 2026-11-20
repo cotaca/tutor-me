@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Anchor, Button, Group, Kbd, Paper, Stack, Text, Title } from '@mantine/core'
+import { Rich } from '../components/Rich'
 import { SlideImage } from '../components/SlideImage'
 import { today } from '../lib/cards'
 import type { Card } from '../lib/db'
@@ -106,9 +107,7 @@ export function LearnView({ title, cards, linkLabel, onReview, onOpenSlide, onEx
             <Text size="sm" c="dimmed">
               Karte {index + 1} / {queue.length} · Fach {card.box}
             </Text>
-            <Text fz="lg" fw={600} style={{ whiteSpace: 'pre-wrap' }}>
-              {card.question}
-            </Text>
+            <Rich text={card.question} size="lg" fw={600} />
 
             {!revealed ? (
               <Group>
@@ -118,7 +117,7 @@ export function LearnView({ title, cards, linkLabel, onReview, onOpenSlide, onEx
               </Group>
             ) : (
               <>
-                <Text style={{ whiteSpace: 'pre-wrap' }}>{card.answer}</Text>
+                <Rich text={card.answer} size="md" />
                 {card.link && (
                   <Group gap="md">
                     <Anchor size="sm" onClick={() => setShowSlide((s) => !s)}>

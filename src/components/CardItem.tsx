@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { ActionIcon, Anchor, Group, Paper, Stack, Text } from '@mantine/core'
+import { ActionIcon, Anchor, Group, Paper, Stack } from '@mantine/core'
 import { IconPencil, IconTrash } from '@tabler/icons-react'
 import type { Card } from '../lib/db'
 import { CardForm } from './CardForm'
+import { Rich } from './Rich'
 
 type Props = {
   card: Card
@@ -41,14 +42,8 @@ export function CardItem({ card, link, onOpenLink, onPatch, onRemove }: Props) {
           style={{ cursor: 'pointer' }}
           onClick={() => setOpen((o) => !o)}
         >
-          <Text fw={600} size="sm" style={{ whiteSpace: 'pre-wrap' }}>
-            {card.question}
-          </Text>
-          {open && (
-            <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
-              {card.answer}
-            </Text>
-          )}
+          <Rich text={card.question} fw={600} />
+          {open && <Rich text={card.answer} />}
           {link && (
             <Anchor
               size="xs"
