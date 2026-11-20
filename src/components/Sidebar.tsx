@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ActionIcon, Group, Menu, NavLink, ScrollArea } from '@mantine/core'
+import { ActionIcon, Anchor, Group, Menu, NavLink, ScrollArea } from '@mantine/core'
 import {
   IconChevronDown,
   IconChevronRight,
@@ -158,6 +158,14 @@ export function Sidebar({
             if (file) onImport(file)
           }}
         />
+        <Anchor
+          component="button"
+          size="xs"
+          c={sel?.kind === 'privacy' ? undefined : 'dimmed'}
+          onClick={() => onSelect({ kind: 'privacy' })}
+        >
+          Datenschutz
+        </Anchor>
         <ActionIcon variant="subtle" color="gray" onClick={onClose}>
           <IconLayoutSidebarLeftCollapse />
         </ActionIcon>

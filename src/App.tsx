@@ -33,6 +33,7 @@ import { Sidebar } from './components/Sidebar'
 import { SlidesView } from './views/SlidesView'
 import { NameView } from './views/NameView'
 import { SemesterView } from './views/SemesterView'
+import { PrivacyView } from './views/PrivacyView'
 
 export default function App() {
   const [data, setData] = useState<Data>()
@@ -285,6 +286,7 @@ export default function App() {
               onExit={() => setSel({ kind: 'module', id: sel.moduleId })}
             />
           )}
+          {sel?.kind === 'privacy' && <PrivacyView />}
           {slides && (
             <SlidesView
               slides={slides}
