@@ -25,7 +25,7 @@ export function parseBackup(json: string): Backup {
     throw new Error('Die Datei ist kein gültiges JSON.')
   }
   if (backup?.app !== 'tutor-me' || typeof backup.data !== 'object' || !backup.data)
-    throw new Error('Die Datei ist kein tutor-me-Backup.')
+    throw new Error('Die Datei ist kein TutorMe-Backup.')
   const data = { ...emptyData(), ...backup.data }
   for (const [key, value] of Object.entries(data))
     if (!Array.isArray(value)) throw new Error(`Das Backup ist beschädigt („${key}“ fehlt).`)

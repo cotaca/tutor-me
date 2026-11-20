@@ -119,7 +119,7 @@ const backupData = { ...data, slides: [{ id: 's1', moduleId: 'm', lectureNum: 'V
 const roundtrip = parseBackup(JSON.stringify(makeBackup(backupData, { s1: 'QUJD' })))
 assert.deepEqual(roundtrip.data, backupData)
 assert.throws(() => parseBackup('kein json'), /kein gültiges JSON/)
-assert.throws(() => parseBackup('{"app":"andere"}'), /kein tutor-me-Backup/)
+assert.throws(() => parseBackup('{"app":"andere"}'), /kein TutorMe-Backup/)
 assert.throws(() => parseBackup(JSON.stringify(makeBackup(backupData, {}))), /fehlen 1 PDF/)
 const old = parseBackup(JSON.stringify({ app: 'tutor-me', data: { semesters: [] }, pdfs: {} }))
 assert.deepEqual(old.data.cards, []) // fehlende Listen aus älteren Backups werden ergänzt

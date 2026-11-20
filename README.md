@@ -1,4 +1,4 @@
-# tutor-me
+# TutorMe
 
 Vorlesungsfolien über Studiengang → Semester → Modul verwalten, Karteikarten mit Verweis auf einzelne Folien anlegen und lernen und pro Semester eine Übersichts-Excel exportieren.
 
