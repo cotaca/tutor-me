@@ -33,6 +33,7 @@ import { Sidebar } from './components/Sidebar'
 import { SlidesView } from './views/SlidesView'
 import { NameView } from './views/NameView'
 import { SemesterView } from './views/SemesterView'
+import { requestPersist } from './lib/storage'
 import { PrivacyView } from './views/PrivacyView'
 
 export default function App() {
@@ -198,6 +199,7 @@ export default function App() {
           onImport={async (file) => {
             if (!confirm('Backup importieren? Alle aktuellen Daten werden dabei ersetzt.')) return
             try {
+              requestPersist()
               setData(await importBackup(file))
               setSel(undefined)
             } catch (e) {
@@ -255,7 +257,10 @@ export default function App() {
               slides={data.slides.filter((s) => s.moduleId === module.id)}
               pages={data.pages}
               onPatch={(change) => update(patchById(data, 'modules', module.id, change))}
-              onUpload={async (files) => update(await importPdfs(data, module.id, files))}
+              onUpload={async (files) => {
+                requestPersist()
+                update(await importPdfs(data, module.id, files))
+              }}
               onOpenSlides={openSlides}
               onDelete={() => confirmRemove({ kind: 'module', id: module.id })}
               search={

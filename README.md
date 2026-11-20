@@ -25,15 +25,13 @@ Details zu Konzept und Datenmodell stehen in [docs/CONCEPT.md](docs/CONCEPT.md).
 
 ## Voraussetzungen
 
-- Node.js ≥ 20.19 (getestet mit 22)
+- Node.js ≥ 22.18 (getestet mit 24), `npm run check` führt TypeScript direkt aus
 
 ## Entwicklung
 
 ```powershell
 npm install
 npm run dev      # Dev-Server auf http://localhost:5173
-npm run build    # Produktions-Build nach dist/
-npm run preview  # Build lokal ansehen
 npm run lint
 ```
 
