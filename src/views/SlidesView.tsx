@@ -9,6 +9,7 @@ import { Outline } from '../components/Outline'
 import { Viewer } from '../components/Viewer'
 import { usePdf } from '../hooks/usePdf'
 import type { Card, Slide, Slides, Topic } from '../lib/db'
+import { slideImage } from '../lib/slideRef'
 import { pathLabel, stripes } from '../lib/topics'
 
 type Props = {
@@ -36,16 +37,27 @@ type Props = {
 export function SlidesView(props: Props) {
   const { slides, pages, page, topics } = props
   const [mode, setMode] = useState('read')
+  // Wartende Anfrage nach einem Folienausschnitt (aus dem Antwortfeld); solange: Rahmen-Modus.
+  const [cropWaiting, setCropWaiting] = useState<(snippet?: string) => void>()
   const { doc, thumbs } = usePdf(slides.id)
   const current = pages.find((p) => p.page === page)
   const stripesOf = (p: Slide) => stripes(topics, p.topicId)
   const cardsOf = (n: number) =>
     props.cards.filter((c) => c.link?.slidesId === slides.id && c.link.page === n)
 
+  function requestCrop() {
+    cropWaiting?.() // ältere Anfrage abbrechen
+    return new Promise<string | undefined>((resolve) => setCropWaiting(() => resolve))
+  }
+
   const modeSwitch = (
     <SegmentedControl
       value={mode}
-      onChange={setMode}
+      onChange={(m) => {
+        cropWaiting?.()
+        setCropWaiting(undefined)
+        setMode(m)
+      }}
       data={[
         { label: 'Lesen', value: 'read' },
         { label: 'Gliedern', value: 'outline' },
@@ -99,12 +111,18 @@ export function SlidesView(props: Props) {
         query={props.query}
         stripes={stripesOf}
         cardCount={(p) => cardsOf(p.page).length}
+        cropping={mode === 'cards' && !!cropWaiting}
+        onCrop={(rect) => {
+          cropWaiting?.(rect && slideImage({ slidesId: slides.id, page, rect }))
+          setCropWaiting(undefined)
+        }}
         side={
           mode === 'cards' && (
             <CardList
               title={`Karteikarten zu Folie ${page}`}
               cards={cardsOf(page)}
               alwaysShowForm
+              onRequestCrop={requestCrop}
               empty="Noch keine Karten zu dieser Folie."
               onAdd={(card) => props.onAddCard({ ...card, link: { slidesId: slides.id, page } })}
               renderCard={(c) => (
@@ -113,6 +131,7 @@ export function SlidesView(props: Props) {
                   card={c}
                   onPatch={(change) => props.onPatchCard(c.id, change)}
                   onRemove={() => props.onRemoveCard(c.id)}
+                  onRequestCrop={requestCrop}
                 />
               )}
             />

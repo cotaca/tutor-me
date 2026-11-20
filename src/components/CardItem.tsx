@@ -11,10 +11,11 @@ type Props = {
   onOpenLink?: () => void
   onPatch: (change: Partial<Card>) => void
   onRemove: () => void
+  onRequestCrop?: () => Promise<string | undefined>
 }
 
 // Frage sichtbar, Antwort per Klick aufklappbar; Bearbeiten und Löschen beim Überfahren.
-export function CardItem({ card, link, onOpenLink, onPatch, onRemove }: Props) {
+export function CardItem({ card, link, onOpenLink, onPatch, onRemove, onRequestCrop }: Props) {
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState(false)
 
@@ -28,6 +29,7 @@ export function CardItem({ card, link, onOpenLink, onPatch, onRemove }: Props) {
             setEditing(false)
           }}
           onCancel={() => setEditing(false)}
+          onRequestCrop={onRequestCrop}
         />
       </Paper>
     )

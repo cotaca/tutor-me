@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react'
 import { ActionIcon, Group, ScrollArea, Stack, Text } from '@mantine/core'
 import {
   IconChevronLeft,
@@ -10,6 +10,7 @@ import { TextLayer } from 'pdfjs-dist'
 import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist'
 import type { Slide } from '../lib/db'
 import { highlightRects } from '../lib/highlight'
+import { rectFrom, type Rect } from '../lib/slideRef'
 import { Thumb } from './Thumb'
 
 const THUMBS_WIDTH = 150
@@ -25,6 +26,9 @@ type Props = {
   cardCount: (page: Slide) => number
   // Ersetzt die Vorschauspalte (Karten-Modus).
   side?: ReactNode
+  // Rahmen-Modus: Ausschnitt der Folie ziehen; onCrop ohne Rahmen = abgebrochen (Esc).
+  cropping?: boolean
+  onCrop?: (rect?: Rect) => void
   onPage: (page: number) => void
   onPatchPages: (pages: number[], change: Partial<Slide>) => void
 }
@@ -39,6 +43,8 @@ export function Viewer({
   stripes,
   cardCount,
   side,
+  cropping,
+  onCrop,
   onPage: setPage,
   onPatchPages,
 }: Props) {
@@ -53,6 +59,8 @@ export function Viewer({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const textRef = useRef<HTMLDivElement>(null)
   const boxRef = useRef<HTMLDivElement>(null)
+  // Eckpunkte des gerade gezogenen Rahmens, als Anteil der Folie.
+  const [drag, setDrag] = useState<{ a: [number, number]; b: [number, number] }>()
 
   const visible = pages.filter((p) => !p.hidden)
   const current = pages.find((p) => p.page === page)
@@ -63,6 +71,10 @@ export function Viewer({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (e.key === 'Escape' && cropping) {
+        setDrag(undefined)
+        onCrop?.()
+      }
       if (e.key === 'ArrowLeft' && prev) setPage(prev.page)
       if (e.key === 'ArrowRight' && next) setPage(next.page)
     }
@@ -171,6 +183,45 @@ export function Viewer({
                   }}
                 />
               ))}
+            {cropping && (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  overflow: 'hidden',
+                  cursor: 'crosshair',
+                  touchAction: 'none',
+                }}
+                onPointerDown={(e) => {
+                  e.currentTarget.setPointerCapture(e.pointerId)
+                  const p = pointOf(e)
+                  setDrag({ a: p, b: p })
+                }}
+                onPointerMove={(e) => drag && setDrag({ ...drag, b: pointOf(e) })}
+                onPointerUp={() => {
+                  if (!drag) return
+                  const rect = rectFrom(drag.a, drag.b)
+                  setDrag(undefined)
+                  // Versehentliche Klicks ohne nennenswerten Rahmen ignorieren.
+                  if (rect[2] > 0.01 && rect[3] > 0.01) onCrop?.(rect)
+                }}
+              >
+                <Text
+                  size="xs"
+                  pos="absolute"
+                  top={8}
+                  left="50%"
+                  px={8}
+                  py={2}
+                  bg="dark.6"
+                  c="white"
+                  style={{ transform: 'translateX(-50%)', borderRadius: 4, pointerEvents: 'none' }}
+                >
+                  Rahmen ziehen · Esc bricht ab
+                </Text>
+                {drag && <CropRect rect={rectFrom(drag.a, drag.b)} />}
+              </div>
+            )}
           </div>
         </div>
 
@@ -233,5 +284,29 @@ export function Viewer({
         </ActionIcon>
       </Group>
     </>
+  )
+}
+
+// Position des Zeigers als Anteil des Elements (0–1), für Rahmen unabhängig von der Anzeigegröße.
+function pointOf(e: PointerEvent<HTMLDivElement>): [number, number] {
+  const r = e.currentTarget.getBoundingClientRect()
+  return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height]
+}
+
+// Gezogener Rahmen; der Rest der Folie wird über den breiten Schatten abgedunkelt.
+function CropRect({ rect: [x, y, w, h] }: { rect: Rect }) {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: `${x * 100}%`,
+        top: `${y * 100}%`,
+        width: `${w * 100}%`,
+        height: `${h * 100}%`,
+        border: '2px solid var(--mantine-color-blue-6)',
+        boxShadow: '0 0 0 9999px rgb(0 0 0 / 0.35)',
+        pointerEvents: 'none',
+      }}
+    />
   )
 }

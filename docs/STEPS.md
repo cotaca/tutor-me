@@ -22,6 +22,6 @@
 - [x] **7. Karteikarten**: Modus "Karten" im Foliensatz (Folie bleibt sichtbar), Liste mit Themenfilter auf der Modulseite, Kartenzahl an den Vorschaubildern
   - [x] Text auf der Folie markieren und kopieren, mindestens im Karten-Modus (Textebene von pdf.js über der Folie)
   - [x] Formatierung in Frage und Antwort: Markdown und Formeln, Umschalter Schreiben/Vorschau
-  - [ ] Bilder in der Antwort: beliebigen Ausschnitt der Folie per Rahmen auswählen und als Bild einfügen
+  - [x] Bilder in der Antwort: beliebigen Ausschnitt der Folie per Rahmen auswählen und als Bild einfügen
 - [x] **8. Lernmodus**: Lernrunde pro Modul bzw. gefiltertem Thema, Leitner (Fächer 1–5, Intervalle 1/2/4/8/16 Tage), nicht gewusste Karten wiederholen sich in der Runde
 - [x] **9. Backup**: eine JSON-Datei mit allen Daten und PDFs (Base64), Import ersetzt alles nach Rückfrage

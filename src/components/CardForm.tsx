@@ -6,11 +6,13 @@ type Props = {
   initial?: { question: string; answer: string }
   onSave: (card: { question: string; answer: string }) => void
   onCancel?: () => void
+  // Folienausschnitt für die Antwort holen (nur im Karten-Modus mit sichtbarer Folie).
+  onRequestCrop?: () => Promise<string | undefined>
 }
 
 // Ohne initial: Formular für neue Karten, das nach dem Speichern leer und offen bleibt.
 // Strg+Enter speichert, Esc bricht das Bearbeiten ab.
-export function CardForm({ initial, onSave, onCancel }: Props) {
+export function CardForm({ initial, onSave, onCancel, onRequestCrop }: Props) {
   const [question, setQuestion] = useState(initial?.question ?? '')
   const [answer, setAnswer] = useState(initial?.answer ?? '')
   // Zähler für angelegte Karten: neue Felder (wieder im Schreibmodus), Fokus auf die Frage.
@@ -50,6 +52,7 @@ export function CardForm({ initial, onSave, onCancel }: Props) {
         value={answer}
         onChange={setAnswer}
         onKeyDown={keys}
+        onRequestInsert={onRequestCrop}
       />
       <Group gap="xs" justify="space-between">
         <Text size="xs" c="dimmed">

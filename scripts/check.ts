@@ -5,6 +5,7 @@ import { buildSheet } from '../src/lib/sheet.ts'
 import { addDays, isDue, review } from '../src/lib/learn.ts'
 import { makeBackup, parseBackup } from '../src/lib/backup.ts'
 import { addTopic, chain, hueOf, moveTopic, removeTopic } from '../src/lib/topics.ts'
+import { parseSlideUrl, rectFrom, slideImage, slideUrl } from '../src/lib/slideRef.ts'
 
 // Titel-Heuristik
 const piece = (str: string, size: number, y: number) => ({
@@ -123,5 +124,21 @@ assert.throws(() => parseBackup('{"app":"andere"}'), /kein TutorMe-Backup/)
 assert.throws(() => parseBackup(JSON.stringify(makeBackup(backupData, {}))), /fehlen 1 PDF/)
 const old = parseBackup(JSON.stringify({ app: 'tutor-me', data: { semesters: [] }, pdfs: {} }))
 assert.deepEqual(old.data.cards, []) // fehlende Listen aus älteren Backups werden ergänzt
+
+// Folienausschnitte
+const crop = {
+  slidesId: '3f2a-b9',
+  page: 14,
+  rect: [0.12345, 0.3, 0.55, 0.4] as [number, number, number, number],
+}
+assert.equal(slideUrl(crop), 'slide:3f2a-b9/14#0.123,0.3,0.55,0.4')
+assert.equal(slideImage(crop), '![Folie 14](slide:3f2a-b9/14#0.123,0.3,0.55,0.4)')
+assert.deepEqual(parseSlideUrl(slideUrl(crop)), { ...crop, rect: [0.123, 0.3, 0.55, 0.4] })
+assert.equal(parseSlideUrl('https://example.com/a.png'), undefined)
+assert.equal(parseSlideUrl('slide:x/1#0.5,0,0.6,1'), undefined) // ragt über den Rand
+assert.equal(parseSlideUrl('slide:x/1#0,0,0,1'), undefined) // leerer Rahmen
+const r6 = (r: number[]) => r.map((n) => Math.round(n * 1e6) / 1e6)
+assert.deepEqual(r6(rectFrom([0.8, 0.9], [0.2, 0.1])), [0.2, 0.1, 0.6, 0.8]) // beliebige Zugrichtung
+assert.deepEqual(rectFrom([-0.5, 0.5], [0.5, 1.5]), [0, 0.5, 0.5, 0.5]) // auf die Folie begrenzt
 
 console.log('check ok')

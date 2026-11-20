@@ -21,6 +21,7 @@ type Props = {
   empty: string
   // Startet eine Lernrunde mit den gerade angezeigten (ggf. gefilterten) Karten.
   onLearn?: (cards: Card[], filterLabel?: string) => void
+  onRequestCrop?: () => Promise<string | undefined>
 }
 
 export function CardList(props: Props) {
@@ -34,6 +35,7 @@ export function CardList(props: Props) {
     <Paper withBorder p="sm">
       <CardForm
         onSave={props.onAdd}
+        onRequestCrop={props.onRequestCrop}
         onCancel={props.alwaysShowForm ? undefined : () => setAdding(false)}
       />
     </Paper>
