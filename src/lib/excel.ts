@@ -35,7 +35,7 @@ export async function exportSemester(data: Data, semester: Semester) {
         const target = ws.getCell(r, c + 1)
         target.value = c === 1 + sheet.levels ? Number(cell.text) : cell.text
         target.alignment = { vertical: 'top', wrapText: true }
-        if (row.hidden) target.font = { italic: true, color: { argb: 'FF999999' } }
+        if (cell.hidden) target.font = { italic: true, color: { argb: 'FF999999' } }
         if (isTaskCell(row, cell))
           target.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${TASK_FILL}` } }
         const colSpan = cell.colSpan ?? 1

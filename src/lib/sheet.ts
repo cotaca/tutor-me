@@ -14,6 +14,7 @@ export type Cell = {
   colSpan?: number
   edit?: Edit
   editValue?: string // falls sich der bearbeitete Wert vom angezeigten Text unterscheidet
+  hidden?: boolean // grau/kursiv: alle Folien, über die sich die Zelle erstreckt, sind ausgeblendet
 }
 
 export type Row = {
@@ -122,6 +123,13 @@ export function buildSheet(data: Data, module: Module): Sheet {
       },
     )
   })
+
+  // Verbundene Zellen (Vorlesung, Themen) nur ausgrauen, wenn jede ihrer Folien ausgeblendet ist.
+  rows.forEach((row, i) =>
+    row.cells.forEach((cell) => {
+      if (cell) cell.hidden = rows.slice(i, i + cell.rowSpan).every((r) => r.hidden)
+    }),
+  )
 
   return {
     name: module.short || module.name,
