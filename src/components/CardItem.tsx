@@ -50,6 +50,8 @@ export function CardItem({ card, link, onOpenLink, onPatch, onRemove, onRequestC
             <Anchor
               size="xs"
               c="dimmed"
+              // Nicht über die ganze Kartenbreite strecken, sonst öffnet ein Klick neben dem Text die Folie.
+              style={{ alignSelf: 'flex-start' }}
               onClick={(e) => {
                 e.stopPropagation()
                 onOpenLink?.()

@@ -106,6 +106,24 @@ assert.deepEqual(
   ['1', '2', '1', '2'],
 )
 
+// Ausgeblendete Folien: verbundene Zellen nur grau, wenn alle ihre Folien ausgeblendet sind.
+const partly = buildSheet(
+  {
+    ...data,
+    modules: [mod],
+    slides: [{ id: 's1', moduleId: 'm', lectureNum: 'VL1' }],
+    pages: [
+      { ...page('s1', 1, 'a'), hidden: true },
+      page('s1', 2, 'a'),
+      { ...page('s1', 3, 'd'), hidden: true },
+    ],
+  },
+  mod,
+)
+const hiddenCells = (r: number) => partly.rows[r].cells.filter(Boolean).map((c) => !!c!.hidden)
+assert.deepEqual(hiddenCells(0), [false, false, true, true, true]) // VL1, Big Data, Folie 1 grau
+assert.deepEqual(hiddenCells(2), [true, true, true, true]) // Cloud nur auf ausgeblendeter Folie 3
+
 // Leitner: gewusst = ein Fach weiter mit dessen Intervall, nicht gewusst = Fach 1, heute fällig
 const card = { id: 'k', moduleId: 'm', question: '', answer: '', box: 1, due: '2026-01-30' }
 assert.equal(addDays('2026-01-30', 2), '2026-02-01')

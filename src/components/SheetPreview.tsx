@@ -54,12 +54,7 @@ export function SheetPreview({ sheet, onEdit, onOpen, onToggleHidden }: Props) {
       </Table.Thead>
       <Table.Tbody>
         {sheet.rows.map((row) => (
-          <Table.Tr
-            key={row.slidesId + row.page}
-            className="hover-parent"
-            c={row.hidden ? 'dimmed' : undefined}
-            fs={row.hidden ? 'italic' : undefined}
-          >
+          <Table.Tr key={row.slidesId + row.page} className="hover-parent">
             {row.cells.map(
               (cell, c) =>
                 cell && (
@@ -72,6 +67,8 @@ export function SheetPreview({ sheet, onEdit, onOpen, onToggleHidden }: Props) {
                     style={{
                       verticalAlign: 'top',
                       background: isTaskCell(row, cell) ? `#${TASK_FILL}` : undefined,
+                      color: cell.hidden ? 'var(--mantine-color-dimmed)' : undefined,
+                      fontStyle: cell.hidden ? 'italic' : undefined,
                     }}
                     onSave={cell.edit && ((v) => onEdit(cell.edit!, v))}
                   />
