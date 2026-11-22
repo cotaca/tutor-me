@@ -1,4 +1,4 @@
-import type { Data, Module } from './db.ts'
+import type { Data, Module, Slide } from './db.ts'
 import { chain } from './topics.ts'
 
 // Was eine Zelle beim Bearbeiten in den App-Daten ändert.
@@ -6,7 +6,7 @@ export type Edit =
   | { kind: 'module'; id: string; field: 'short' | 'name' | 'lecturer' }
   | { kind: 'slides'; id: string }
   | { kind: 'topic'; id: string }
-  | { kind: 'title' | 'note'; slidesId: string; page: number }
+  | { kind: 'title' | 'note'; slidesId: string; pages: number[] }
 
 export type Cell = {
   text: string
@@ -19,7 +19,8 @@ export type Cell = {
 
 export type Row = {
   slidesId: string
-  page: number
+  page: number // erste Folie der Zeile
+  pages: number[] // alle Folien der Zeile (mehrere bei gleichem Titel)
   hidden: boolean
   task: boolean
   cells: (Cell | null)[]
@@ -45,17 +46,30 @@ export type Sheet = {
 export function buildSheet(data: Data, module: Module): Sheet {
   const slides = data.slides.filter((s) => s.moduleId === module.id)
   const topics = data.topics.filter((t) => t.moduleId === module.id)
-  const pages = slides.flatMap((s) =>
-    data.pages.filter((p) => p.slidesId === s.id).sort((a, b) => a.page - b.page),
-  )
+  // Aufeinanderfolgende Folien eines Foliensatzes mit gleichem Titel und Thema werden eine Zeile.
+  const groups: Slide[][] = []
+  for (const s of slides)
+    for (const p of data.pages.filter((p) => p.slidesId === s.id).sort((a, b) => a.page - b.page)) {
+      const last = groups.at(-1)?.[0]
+      if (
+        last?.slidesId === p.slidesId &&
+        p.title &&
+        last.title === p.title &&
+        last.topicId === p.topicId
+      )
+        groups.at(-1)!.push(p)
+      else groups.push([p])
+    }
+  const pages = groups.map((g) => g[0])
   const chains = pages.map((p) => chain(topics, p.topicId))
   const levels = Math.max(1, ...chains.map((c) => c.length))
 
-  const rows: Row[] = pages.map((p) => ({
-    slidesId: p.slidesId,
-    page: p.page,
-    hidden: p.hidden,
-    task: !!p.task,
+  const rows: Row[] = groups.map((g) => ({
+    slidesId: g[0].slidesId,
+    page: g[0].page,
+    pages: g.map((p) => p.page),
+    hidden: g.every((p) => p.hidden),
+    task: g.some((p) => p.task),
     cells: [],
   }))
 
@@ -110,16 +124,18 @@ export function buildSheet(data: Data, module: Module): Sheet {
       i = end
     }
   }
-  pages.forEach((p, i) => {
-    const at = { slidesId: p.slidesId, page: p.page }
+  groups.forEach((g, i) => {
+    const row = rows[i]
+    const at = { slidesId: row.slidesId, pages: row.pages }
+    const notes = [...new Set(g.map((p) => p.note).filter(Boolean))].join(' – ')
     rows[i].cells.push(
-      { text: String(p.page), rowSpan: 1 },
-      { text: p.title, rowSpan: 1, edit: { kind: 'title', ...at } },
+      { text: g.length > 1 ? `${row.page}-${g.at(-1)!.page}` : String(row.page), rowSpan: 1 },
+      { text: g[0].title, rowSpan: 1, edit: { kind: 'title', ...at } },
       {
-        text: [p.task && 'Aufgabe', p.note].filter(Boolean).join(' – '),
+        text: [row.task && 'Aufgabe', notes].filter(Boolean).join(' – '),
         rowSpan: 1,
         edit: { kind: 'note', ...at },
-        editValue: p.note ?? '',
+        editValue: notes,
       },
     )
   })

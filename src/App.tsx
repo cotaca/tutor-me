@@ -243,12 +243,9 @@ export default function App() {
               onDelete={() => confirmRemove({ kind: 'semester', id: semester.id })}
               onEdit={(edit, value) => update(applyEdit(data, edit, value))}
               onOpen={openSlides}
-              onToggleHidden={(slidesId, p) => {
-                const hidden = data.pages.find(
-                  (x) => x.slidesId === slidesId && x.page === p,
-                )?.hidden
-                update(patchPages(data, slidesId, [p], { hidden: !hidden }))
-              }}
+              onToggleHidden={(slidesId, ps, hidden) =>
+                update(patchPages(data, slidesId, ps, { hidden }))
+              }
             />
           )}
           {module && (

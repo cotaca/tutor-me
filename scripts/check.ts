@@ -124,6 +124,34 @@ const hiddenCells = (r: number) => partly.rows[r].cells.filter(Boolean).map((c) 
 assert.deepEqual(hiddenCells(0), [false, false, true, true, true]) // VL1, Big Data, Folie 1 grau
 assert.deepEqual(hiddenCells(2), [true, true, true, true]) // Cloud nur auf ausgeblendeter Folie 3
 
+// Gleicher Titel auf aufeinanderfolgenden Folien: eine Zeile, Folie als Bereich.
+const same = (n: number, extra = {}) => ({ ...page('s1', n, 'a'), title: 'Gleich', ...extra })
+const grouped = buildSheet(
+  {
+    ...data,
+    modules: [mod],
+    slides: [{ id: 's1', moduleId: 'm', lectureNum: 'VL1' }],
+    pages: [
+      same(1, { hidden: true }),
+      same(2, { task: true }),
+      same(3, { hidden: true }),
+      page('s1', 4, 'a'),
+      same(5, { hidden: true }),
+      same(6, { hidden: true }),
+    ],
+  },
+  mod,
+)
+assert.deepEqual(
+  grouped.rows.map((r) => [r.cells.at(-3)?.text, r.task, r.hidden]),
+  [
+    ['1-3', true, false], // eine Aufgabe reicht, nicht alle ausgeblendet
+    ['4', false, false],
+    ['5-6', false, true], // alle ausgeblendet
+  ],
+)
+assert.deepEqual(grouped.rows[0].pages, [1, 2, 3])
+
 // Leitner: gewusst = ein Fach weiter mit dessen Intervall, nicht gewusst = Fach 1, heute fällig
 const card = { id: 'k', moduleId: 'm', question: '', answer: '', box: 1, due: '2026-01-30' }
 assert.equal(addDays('2026-01-30', 2), '2026-02-01')

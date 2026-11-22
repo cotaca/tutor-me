@@ -15,7 +15,7 @@ type Props = {
   onDelete: () => void
   onEdit: (edit: Edit, value: string) => void
   onOpen: (slidesId: string, page: number) => void
-  onToggleHidden: (slidesId: string, page: number) => void
+  onToggleHidden: (slidesId: string, pages: number[], hidden: boolean) => void
 }
 
 export function SemesterView({ data, semester, onRename, onDelete, ...sheetProps }: Props) {

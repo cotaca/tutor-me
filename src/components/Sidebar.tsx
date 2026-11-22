@@ -37,13 +37,17 @@ export function Sidebar({
   onExport,
   onImport,
 }: Props) {
-  const [collapsed, setCollapsed] = useState(new Set<string>())
+  // Vom Standard abweichend auf- oder zugeklappte Einträge.
+  const [toggled, setToggled] = useState(new Set<string>())
   const fileRef = useRef<HTMLInputElement>(null)
   const programs = [...new Set(data.semesters.map((s) => s.program))]
 
-  const isOpen = (key: string) => !collapsed.has(key)
+  // Standard: Studiengänge offen, darin nur das zuletzt angelegte Semester, Module zu.
+  const newest = new Set(programs.map((p) => data.semesters.findLast((s) => s.program === p)?.id))
+  const isOpen = (key: string) =>
+    (key.startsWith('program:') || newest.has(key)) !== toggled.has(key)
   const toggle = (key: string) =>
-    setCollapsed((c) => {
+    setToggled((c) => {
       const next = new Set(c)
       if (!next.delete(key)) next.add(key)
       return next
