@@ -7,7 +7,7 @@ type Props = {
   sheet: Sheet
   onEdit: (edit: Edit, value: string) => void
   onOpen: (slidesId: string, page: number) => void
-  onToggleHidden: (slidesId: string, page: number) => void
+  onToggleHidden: (slidesId: string, pages: number[], hidden: boolean) => void
 }
 
 // Zeigt ein Arbeitsblatt so, wie es in der Excel aussieht. Doppelklick bearbeitet den Text einer Zelle.
@@ -81,7 +81,7 @@ export function SheetPreview({ sheet, onEdit, onOpen, onToggleHidden }: Props) {
                   variant="subtle"
                   color="gray"
                   title={row.hidden ? 'Einblenden' : 'Ausblenden'}
-                  onClick={() => onToggleHidden(row.slidesId, row.page)}
+                  onClick={() => onToggleHidden(row.slidesId, row.pages, !row.hidden)}
                 >
                   {row.hidden ? <IconEyeOff size={14} /> : <IconEye size={14} />}
                 </ActionIcon>

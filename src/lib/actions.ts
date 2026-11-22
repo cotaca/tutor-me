@@ -111,7 +111,18 @@ export function applyEdit(data: Data, edit: Edit, value: string): Data {
     case 'topic':
       return patchById(data, 'topics', edit.id, { title: value })
     case 'title':
-    case 'note':
-      return patchPages(data, edit.slidesId, [edit.page], { [edit.kind]: value })
+      return patchPages(data, edit.slidesId, edit.pages, { title: value })
+    case 'note': {
+      // Zusammengefasste Zeile: Notiz an die erste Folie, die übrigen leeren (sonst doppelt).
+      const [first, ...rest] = edit.pages
+      return patchPages(
+        patchPages(data, edit.slidesId, [first], { note: value }),
+        edit.slidesId,
+        rest,
+        {
+          note: '',
+        },
+      )
+    }
   }
 }

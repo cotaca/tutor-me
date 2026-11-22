@@ -63,10 +63,10 @@ Vorschau und Export entstehen aus demselben Tabellenmodell, damit die Datei gena
 
 - Kopf: A1:A2 Kürzel, B1 Modulname, B2 Dozent*in (über alle Spalten verbunden)
 - Zeile 3: `#` | `Thema` (eine Spalte pro genutzter Ebene) | `Folie` | `Inhalt` | `Sonstiges`
-- Eine Zeile pro Folie. `#` = Vorlesung, über ihre Folien verbunden; Themenzellen über aufeinanderfolgende Folien
+- Eine Zeile pro Folie, aufeinanderfolgende Folien mit gleichem Titel und Thema als eine Zeile (`Folie` = `3-5`, Aufgabe wenn eine davon, ausgeblendet wenn alle). `#` = Vorlesung, über ihre Folien verbunden; Themenzellen über aufeinanderfolgende Folien
   mit demselben Thema verbunden (auch über Vorlesungsgrenzen)
 - `Folie` = Seitenzahl, `Inhalt` = Folientitel, `Sonstiges` = "Aufgabe" (falls markiert) + Notiz
-- Ausgeblendete Folien bleiben drin, aber grau und kursiv. Keine Themenfarben in der Excel.
+- Ausgeblendete Folien bleiben drin, aber grau und kursiv; verbundene Zellen nur, wenn alle ihre Folien ausgeblendet sind. Keine Themenfarben in der Excel.
 
 Bearbeiten in der Vorschau nur als Notlösung, das Ziel ist eine Excel, die beim Export schon stimmt.
 Nur Text, per Doppelklick; jede Änderung geht in die App-Daten zurück (Modulkopf, Vorlesung, Thema,
